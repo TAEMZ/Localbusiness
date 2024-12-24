@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "197483555297",
+    "project_id": "localbussiness-bc1ef",
+    "storage_bucket": "localbussiness-bc1ef.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:197483555297:android:64f0b2998cd535dedecaa0",
+        "android_client_info": {
+          "package_name": "com.example.localbusiness"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1xXAxHY98wtuNmy0GxeoJXHGe8v9ZYCY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
