@@ -14,11 +14,10 @@ class OwnerAnalyticsPage extends StatelessWidget {
     }
 
     try {
-      // Fetch the single business created by the owner
+      // Fetch all businesses created by the owner
       final businessSnapshot = await FirebaseFirestore.instance
           .collection('businesses')
           .where('creatorId', isEqualTo: userId)
-          .limit(1)
           .get();
 
       if (businessSnapshot.docs.isEmpty) {
@@ -31,45 +30,47 @@ class OwnerAnalyticsPage extends StatelessWidget {
         };
       }
 
-      final business = businessSnapshot.docs.first;
-      final businessId = business.id;
-
-      // Fetch reviews for the single business
-      final reviewsSnapshot = await FirebaseFirestore.instance
-          .collectionGroup('reviews')
-          .where('business_id', isEqualTo: businessId)
-          .get();
-
-      int totalReviews = reviewsSnapshot.docs.length;
+      int totalReviews = 0;
       double totalRating = 0;
       int totalPositiveReviews = 0;
       int totalNegativeReviews = 0;
+      int totalSearches = 0;
 
-      for (var reviewDoc in reviewsSnapshot.docs) {
-        final reviewData = reviewDoc.data();
-        final rating = (reviewData['rating'] ?? 0) as double;
+      for (var business in businessSnapshot.docs) {
+        final businessId = business.id;
 
-        totalRating += rating;
+        // Fetch reviews for the business
+        final reviewsSnapshot = await FirebaseFirestore.instance
+            .collectionGroup('reviews')
+            .where('business_id', isEqualTo: businessId)
+            .get();
 
-        if (rating > 3) {
-          totalPositiveReviews++;
-        } else {
-          totalNegativeReviews++;
+        totalReviews += reviewsSnapshot.docs.length;
+
+        for (var reviewDoc in reviewsSnapshot.docs) {
+          final reviewData = reviewDoc.data();
+          final rating = (reviewData['rating'] ?? 0) as double;
+
+          totalRating += rating;
+          if (rating > 3) {
+            totalPositiveReviews++;
+          } else {
+            totalNegativeReviews++;
+          }
         }
-      }
 
-      // Fetch search metrics from business
-      int timesSearched = (business.data()['timesSearched'] ?? 0) as int;
+        // Fetch search metrics
+        totalSearches += (business.data()['timesSearched'] ?? 0) as int;
+      }
 
       return {
         'totalReviews': totalReviews,
         'averageRating': totalReviews > 0 ? totalRating / totalReviews : 0.0,
         'totalPositiveReviews': totalPositiveReviews,
         'totalNegativeReviews': totalNegativeReviews,
-        'timesSearched': timesSearched,
+        'timesSearched': totalSearches,
       };
     } catch (e) {
-      // Log the error to the debug console
       debugPrint('Error fetching analytics: $e');
       return {};
     }
@@ -78,9 +79,23 @@ class OwnerAnalyticsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localization = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(localization.analytics),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const OwnerAnalyticsPage(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _fetchAnalytics(),
@@ -92,10 +107,11 @@ class OwnerAnalyticsPage extends StatelessWidget {
           if (snapshot.hasError ||
               snapshot.data == null ||
               snapshot.data!.isEmpty) {
-            // Log the error and show a placeholder message
-            debugPrint('Error or no data available in analytics');
             return const Center(
-              child: Text('No data available.'),
+              child: Text(
+                'No analytics data available.',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
             );
           }
 
@@ -103,63 +119,47 @@ class OwnerAnalyticsPage extends StatelessWidget {
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  localization.your_analytics,
-                  style: const TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 20),
-
-                // Total Reviews and Comments
-                _buildAnalyticsCard(
-                  context,
-                  icon: Icons.rate_review,
-                  title: localization.your_review,
-                  subtitle: '${analytics['totalReviews'] ?? 0} Reviews',
-                  color: Colors.green,
-                ),
-
-                // Average Rating
-                _buildAnalyticsCardWithRating(
-                  context,
-                  icon: Icons.star,
-                  title: localization.rating,
-                  rating: analytics['averageRating'] ?? 0.0,
-                  color: Colors.amber,
-                ),
-
-                // Total Positive Reviews
-                _buildAnalyticsCard(
-                  context,
-                  icon: Icons.thumb_up,
-                  title: localization.total_positive,
-                  subtitle:
-                      '${analytics['totalPositiveReviews'] ?? 0} Positive',
-                  color: Colors.blue,
-                ),
-
-                // Total Negative Reviews
-                _buildAnalyticsCard(
-                  context,
-                  icon: Icons.thumb_down,
-                  title: localization.total_negative,
-                  subtitle:
-                      '${analytics['totalNegativeReviews'] ?? 0} Negative',
-                  color: Colors.red,
-                ),
-
-                // Times Searched
-                _buildAnalyticsCard(
-                  context,
-                  icon: Icons.search,
-                  title: localization.times_searched,
-                  subtitle: '${analytics['timesSearched'] ?? 0} Searches',
-                  color: Colors.purple,
-                ),
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildAnalyticsCard(
+                    context,
+                    icon: Icons.rate_review,
+                    title: localization.your_review,
+                    value: '${analytics['totalReviews'] ?? 0}',
+                    color: Colors.green,
+                  ),
+                  _buildAnalyticsCardWithRating(
+                    context,
+                    icon: Icons.star,
+                    title: localization.rating,
+                    rating: analytics['averageRating'] ?? 0.0,
+                    color: Colors.amber,
+                  ),
+                  _buildAnalyticsCard(
+                    context,
+                    icon: Icons.thumb_up,
+                    title: localization.total_positive,
+                    value: '${analytics['totalPositiveReviews'] ?? 0}',
+                    color: Colors.blue,
+                  ),
+                  _buildAnalyticsCard(
+                    context,
+                    icon: Icons.thumb_down,
+                    title: localization.total_negative,
+                    value: '${analytics['totalNegativeReviews'] ?? 0}',
+                    color: Colors.red,
+                  ),
+                  _buildAnalyticsCard(
+                    context,
+                    icon: Icons.search,
+                    title: localization.times_searched,
+                    value: '${analytics['timesSearched'] ?? 0}',
+                    color: Colors.purple,
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -170,24 +170,36 @@ class OwnerAnalyticsPage extends StatelessWidget {
   Widget _buildAnalyticsCard(BuildContext context,
       {required IconData icon,
       required String title,
-      required String subtitle,
+      required String value,
       required Color color}) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      elevation: 4.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color,
-          child: Icon(icon, color: Colors.white),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: const TextStyle(color: Colors.grey, fontSize: 14),
+    return Container(
+      width: 150, // Fixed width for horizontal scrolling
+      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Card(
+        elevation: 4.0,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 40, color: color),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                value,
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -198,37 +210,46 @@ class OwnerAnalyticsPage extends StatelessWidget {
       required String title,
       required double rating,
       required Color color}) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      elevation: 4.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color,
-          child: Icon(icon, color: Colors.white),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        subtitle: Row(
-          children: [
-            Row(
-              children: List.generate(
-                5,
-                (index) => Icon(
-                  index < rating ? Icons.star : Icons.star_border,
-                  color: Colors.amber,
-                  size: 18,
+    return Container(
+      width: 150, // Fixed width for horizontal scrolling
+      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Card(
+        elevation: 4.0,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 40, color: color),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 5),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  5,
+                  (index) => Icon(
+                    index < rating ? Icons.star : Icons.star_border,
+                    color: Colors.amber,
+                    size: 20,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 8.0),
-            Text(
-              rating.toStringAsFixed(1),
-              style: const TextStyle(color: Colors.black, fontSize: 14),
-            ),
-          ],
+              const SizedBox(height: 5),
+              Text(
+                rating.toStringAsFixed(1),
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
         ),
       ),
     );

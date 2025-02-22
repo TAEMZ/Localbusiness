@@ -36,8 +36,8 @@ class _BusinessFormState extends State<BusinessForm> {
     'Coffee'
   ];
 
-  File? _pickedImage;
-  String? _uploadedImageUrl;
+  List<File> _pickedImages = []; // List to store multiple images
+  List<String> _uploadedImageUrls = []; // List to store uploaded image URLs
   LatLng? selectedLocation;
   bool _isLoading = false;
   String? userEmail;
@@ -64,7 +64,7 @@ class _BusinessFormState extends State<BusinessForm> {
       openingController.text = widget.business!['opening_hours'] ?? '';
       closingController.text = widget.business!['closing_hours'] ?? '';
       selectedCategory = widget.business!['category'] ?? '';
-      _uploadedImageUrl = widget.business!['image'] ?? '';
+      _uploadedImageUrls = List<String>.from(widget.business!['images'] ?? []);
 
       if (widget.business!['location'] != null) {
         final loc = widget.business!['location'];
@@ -73,45 +73,45 @@ class _BusinessFormState extends State<BusinessForm> {
     }
   }
 
-  Future<void> pickImage() async {
+  Future<void> pickImages() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
+    final pickedFiles = await picker.pickMultiImage();
+
+    if (pickedFiles != null) {
       setState(() {
-        _pickedImage = File(pickedFile.path);
+        _pickedImages = pickedFiles.map((file) => File(file.path)).toList();
       });
     }
   }
 
-  Future<void> uploadImageToCloudinary() async {
-    if (_pickedImage == null) return;
+  Future<void> uploadImagesToCloudinary() async {
+    if (_pickedImages.isEmpty) return;
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final cloudinaryUrl =
-          Uri.parse('https://api.cloudinary.com/v1_1/da7hlicdz/image/upload');
-      const uploadPreset = 'cloudinary'; // Replace with your preset
-      const assetFolder = 'local_business_app';
+      for (var image in _pickedImages) {
+        final cloudinaryUrl =
+            Uri.parse('https://api.cloudinary.com/v1_1/da7hlicdz/image/upload');
+        const uploadPreset = 'cloudinary'; // Replace with your preset
+        const assetFolder = 'local_business_app';
 
-      final request = http.MultipartRequest('POST', cloudinaryUrl)
-        ..fields['upload_preset'] = uploadPreset
-        ..fields['folder'] = assetFolder
-        ..files
-            .add(await http.MultipartFile.fromPath('file', _pickedImage!.path));
+        final request = http.MultipartRequest('POST', cloudinaryUrl)
+          ..fields['upload_preset'] = uploadPreset
+          ..fields['folder'] = assetFolder
+          ..files.add(await http.MultipartFile.fromPath('file', image.path));
 
-      final response = await request.send();
-      final responseData = await response.stream.bytesToString();
+        final response = await request.send();
+        final responseData = await response.stream.bytesToString();
 
-      if (response.statusCode == 200) {
-        final jsonResponse = json.decode(responseData);
-        setState(() {
-          _uploadedImageUrl = jsonResponse['secure_url'];
-        });
-      } else {
-        throw Exception('Failed to upload image');
+        if (response.statusCode == 200) {
+          final jsonResponse = json.decode(responseData);
+          _uploadedImageUrls.add(jsonResponse['secure_url']);
+        } else {
+          throw Exception('Failed to upload image');
+        }
       }
     } finally {
       setState(() {
@@ -143,10 +143,19 @@ class _BusinessFormState extends State<BusinessForm> {
   Future<void> saveBusinessToFirestore(
       Map<String, dynamic> businessData) async {
     try {
-      if (_uploadedImageUrl != null) {
-        businessData['image'] = _uploadedImageUrl;
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
       }
 
+      // Ensure creatorId is set
+      businessData['creatorId'] = user.uid; // This is critical
+      businessData['creatorEmail'] = user.email;
+
+      // Add location and image data
+      if (_uploadedImageUrls.isNotEmpty) {
+        businessData['images'] = _uploadedImageUrls;
+      }
       if (selectedLocation != null) {
         businessData['location'] = {
           'latitude': selectedLocation!.latitude,
@@ -154,13 +163,7 @@ class _BusinessFormState extends State<BusinessForm> {
         };
       }
 
-      // Add creatorId and email to the business data
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        businessData['creatorId'] = user.uid;
-        businessData['creatorEmail'] = user.email;
-      }
-
+      // Add to Firestore
       await FirebaseFirestore.instance
           .collection('businesses')
           .add(businessData);
@@ -181,19 +184,19 @@ class _BusinessFormState extends State<BusinessForm> {
         closingController.text.trim().isEmpty ||
         selectedCategory == null ||
         selectedCategory!.isEmpty ||
-        (_pickedImage == null && _uploadedImageUrl == null) ||
+        (_pickedImages.isEmpty && _uploadedImageUrls.isEmpty) ||
         selectedLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Please fill in all fields, select an image, and pick a location.'),
+              'Please fill in all fields, select at least one image, and pick a location.'),
         ),
       );
       return;
     }
 
-    if (_pickedImage != null) {
-      await uploadImageToCloudinary();
+    if (_pickedImages.isNotEmpty) {
+      await uploadImagesToCloudinary();
     }
 
     final businessData = {
@@ -202,7 +205,7 @@ class _BusinessFormState extends State<BusinessForm> {
       'phone': phoneController.text.trim(),
       'city': cityController.text.trim(),
       'category': selectedCategory ?? '',
-      'image': _uploadedImageUrl ?? '',
+      'images': _uploadedImageUrls, // Store multiple image URLs
       'opening_hours': openingController.text.trim(),
       'closing_hours': closingController.text.trim(),
       'created_at': DateTime.now(),
@@ -269,17 +272,39 @@ class _BusinessFormState extends State<BusinessForm> {
                       },
                     ),
                     const SizedBox(height: 10),
-                    _pickedImage != null
-                        ? Image.file(_pickedImage!,
-                            height: 150, fit: BoxFit.cover)
-                        : (_uploadedImageUrl != null
-                            ? Image.network(_uploadedImageUrl!,
-                                height: 150, fit: BoxFit.cover)
-                            : const Text('No image selected')),
                     TextButton(
-                      onPressed: pickImage,
-                      child: Text(localization.image),
+                      onPressed: pickImages,
+                      child: Text(
+                          'Add Images (${_pickedImages.length + _uploadedImageUrls.length})'),
                     ),
+                    if (_pickedImages.isNotEmpty ||
+                        _uploadedImageUrls.isNotEmpty)
+                      SizedBox(
+                        height: 100,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount:
+                              _pickedImages.length + _uploadedImageUrls.length,
+                          itemBuilder: (context, index) {
+                            if (index < _pickedImages.length) {
+                              return Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: Image.file(_pickedImages[index],
+                                    width: 100, height: 100),
+                              );
+                            } else {
+                              final urlIndex = index - _pickedImages.length;
+                              return Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: Image.network(
+                                    _uploadedImageUrls[urlIndex],
+                                    width: 100,
+                                    height: 100),
+                              );
+                            }
+                          },
+                        ),
+                      ),
                     TextField(
                       controller: openingController,
                       decoration:

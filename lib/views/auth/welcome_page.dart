@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'auth_modal.dart';
+import '../user/user_home_page.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
@@ -6,99 +8,122 @@ class WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Welcome'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Sign-Up Button
-            ElevatedButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => RoleSelectionDialog(
-                    title: 'Sign Up As',
-                    onUserSelected: () {
-                      Navigator.pop(context); // Close the dialog
-                      Navigator.pushNamed(context, '/signup_user');
-                    },
-                    onOwnerSelected: () {
-                      Navigator.pop(context); // Close the dialog
-                      Navigator.pushNamed(context, '/signup_owner');
-                    },
-                  ),
-                );
-              },
-              child: const Text('Sign Up'),
-            ),
-            const SizedBox(height: 20),
-
-            // Login Button
-            ElevatedButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => RoleSelectionDialog(
-                    title: 'Login As',
-                    onUserSelected: () {
-                      Navigator.pop(context); // Close the dialog
-                      Navigator.pushNamed(context, '/login_user');
-                    },
-                    onOwnerSelected: () {
-                      Navigator.pop(context); // Close the dialog
-                      Navigator.pushNamed(context, '/login_owner');
-                    },
-                  ),
-                );
-              },
-              child: const Text('Login'),
-            ),
-          ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF6A11CB), Color(0xFF2575FC)], // Gradient colors
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
-      ),
-    );
-  }
-}
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Logo and App Name
+              Image.asset(
+                'assets/images/logo2.png', // Replace with your logo asset
+                width: 180,
+                height: 180,
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                '',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 40),
 
-// Reusable Role Selection Dialog
-class RoleSelectionDialog extends StatelessWidget {
-  final String title;
-  final VoidCallback onUserSelected;
-  final VoidCallback onOwnerSelected;
+              // Continue as Business Owner
+              ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => const AuthModal(role: 'owner'),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.blue,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.business, size: 24),
+                    SizedBox(width: 10),
+                    Text(
+                      'Manage My Business',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
 
-  const RoleSelectionDialog({
-    super.key,
-    required this.title,
-    required this.onUserSelected,
-    required this.onOwnerSelected,
-  });
+              // Continue as Regular User
+              ElevatedButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => const AuthModal(role: 'user'),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.green,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.search, size: 24),
+                    SizedBox(width: 10),
+                    Text(
+                      'Discover Local Businesses',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40),
 
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context); // Close the dialog
-              onUserSelected();
-            },
-            child: const Text('User'),
+              // Continue as Guest
+              TextButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const UserHomePage(isGuest: true),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Continue as Guest',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context); // Close the dialog
-              onOwnerSelected();
-            },
-            child: const Text('Owner'),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'owner_analytics_page.dart';
@@ -24,8 +25,16 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
   @override
   void initState() {
     super.initState();
-    _businessesStream =
-        FirebaseFirestore.instance.collection('businesses').snapshots();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // Filter businesses by creatorId
+      _businessesStream = FirebaseFirestore.instance
+          .collection('businesses')
+          .where('creatorId', isEqualTo: user.uid)
+          .snapshots();
+    } else {
+      _businessesStream = const Stream.empty();
+    }
   }
 
   // Pages for navigation

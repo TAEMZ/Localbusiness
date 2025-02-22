@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:localbusiness/views/auth/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Localization
@@ -42,7 +43,7 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Local Business Discovery',
+      title: 'Business Discovery',
       theme: ThemeData(
         primarySwatch: Colors.deepPurple,
         brightness:
@@ -67,7 +68,7 @@ class MyApp extends StatelessWidget {
         '/signup_owner': (context) => SignupOwnerPage(),
         '/login_user': (context) => LoginPage(userRole: 'user'),
         '/login_owner': (context) => LoginPage(userRole: 'owner'),
-        '/user_home': (context) => UserHomePage(),
+        '/user_home': (context) => const UserHomePage(),
         '/owner_dashboard': (context) => const OwnerDashboard(),
       },
     );
@@ -81,7 +82,7 @@ class AuthWrapper extends StatelessWidget {
     final User? user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      return const WelcomePage();
+      return const SplashScreen();
     }
 
     try {
@@ -94,7 +95,7 @@ class AuthWrapper extends StatelessWidget {
       if (role == 'owner') {
         return const OwnerDashboard();
       } else {
-        return UserHomePage();
+        return const UserHomePage();
       }
     } catch (e) {
       print('AuthWrapper Error: $e');

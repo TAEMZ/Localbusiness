@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ReviewsList extends StatefulWidget {
   const ReviewsList({super.key});
@@ -71,7 +70,6 @@ class _ReviewsListState extends State<ReviewsList> {
   }
 
   Widget _buildShimmerLoader() {
-    final localization = AppLocalizations.of(context)!;
     return SizedBox(
       height: 150, // Fixed height for horizontal scrolling
       child: ListView.builder(

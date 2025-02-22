@@ -8,12 +8,15 @@ import 'package:provider/provider.dart';
 
 class UserBusinessCard extends StatefulWidget {
   final Map<String, dynamic> businessData;
-  final VoidCallback? onRemove; // Callback to handle removal (optional)
+  final VoidCallback? onRemove;
+  final double? distance;
+  // Callback to handle removal (optional)
 
   const UserBusinessCard({
     super.key,
     required this.businessData,
     this.onRemove,
+    this.distance,
   });
 
   @override
@@ -129,6 +132,20 @@ class _UserBusinessCardState extends State<UserBusinessCard> {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
+                  // Display Distance (only if provided)
+                  if (widget.distance != null)
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on,
+                            color: Colors.red, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${(widget.distance! / 1000).toStringAsFixed(1)} km away', // Convert meters to km
+                          style:
+                              const TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 10.0),
 
                   // Action Buttons

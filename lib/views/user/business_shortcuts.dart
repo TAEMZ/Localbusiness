@@ -9,11 +9,11 @@ class BusinessShortcuts extends StatelessWidget {
   Widget build(BuildContext context) {
     final localization = AppLocalizations.of(context)!;
     final List<Map<String, dynamic>> shortcuts = [
-      {'icon': Icons.restaurant, 'label': localization.restaurant},
-      {'icon': Icons.cut, 'label': localization.hairdresser},
-      {'icon': Icons.local_bar, 'label': localization.bar},
-      {'icon': Icons.delivery_dining, 'label': localization.delivery},
-      {'icon': Icons.local_cafe, 'label': localization.coffee},
+      {'icon': Icons.restaurant, 'label': 'Restaurants'},
+      {'icon': Icons.cut, 'label': 'Hairdresser'},
+      {'icon': Icons.local_bar, 'label': 'Bars'},
+      {'icon': Icons.delivery_dining, 'label': 'Delivery'},
+      {'icon': Icons.local_cafe, 'label': 'Coffee'},
     ];
 
     return Wrap(

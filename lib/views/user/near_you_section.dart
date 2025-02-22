@@ -4,7 +4,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:localbusiness/views/user/near_details_page.dart';
 import 'package:shimmer/shimmer.dart';
 // Import the new details page
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class NearYouSection extends StatefulWidget {
   const NearYouSection({super.key});
@@ -23,11 +22,41 @@ class _NearYouSectionState extends State<NearYouSection> {
   }
 
   Future<Position> _getUserLocation() async {
+    // Check if location services are enabled
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      throw Exception('Location services are disabled.');
+      // Optionally prompt the user to enable location services
+      bool enableService = await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Location Services Disabled'),
+          content:
+              const Text('Enable location services to see nearby businesses.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Enable'),
+            ),
+          ],
+        ),
+      );
+
+      if (enableService == true) {
+        await Geolocator.openLocationSettings();
+        serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) {
+          throw Exception('Location services are still disabled.');
+        }
+      } else {
+        throw Exception('Location services are required.');
+      }
     }
 
+    // Check location permissions
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -37,12 +66,42 @@ class _NearYouSectionState extends State<NearYouSection> {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      final localization = AppLocalizations.of(context)!;
-      throw Exception(localization.location_Prompt);
+      // Direct user to app settings
+      bool openSettings = await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Permission Required'),
+          content: const Text(
+              'Location permissions are permanently denied. Open settings to enable.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Open Settings'),
+            ),
+          ],
+        ),
+      );
+
+      if (openSettings == true) {
+        await Geolocator.openAppSettings();
+        // Re-check permission after returning from settings
+        permission = await Geolocator.checkPermission();
+        if (permission != LocationPermission.always &&
+            permission != LocationPermission.whileInUse) {
+          throw Exception('Location permission still denied.');
+        }
+      } else {
+        throw Exception('Location permission required.');
+      }
     }
 
     return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
+      desiredAccuracy: LocationAccuracy.high,
+    );
   }
 
   Future<List<Map<String, dynamic>>> _getNearbyBusinesses() async {
@@ -52,26 +111,36 @@ class _NearYouSectionState extends State<NearYouSection> {
       final snapshot =
           await FirebaseFirestore.instance.collection('businesses').get();
 
-      List<Map<String, dynamic>> businesses = snapshot.docs.map((doc) {
+      List<Map<String, dynamic>> businesses = [];
+
+      for (var doc in snapshot.docs) {
         final data = doc.data();
+        final location = data['location'] as Map<String, dynamic>?;
+
+        // Skip businesses without location data
+        if (location == null) continue;
+
+        final double businessLat = location['latitude'] as double? ?? 0.0;
+        final double businessLng = location['longitude'] as double? ?? 0.0;
+
         final double distance = Geolocator.distanceBetween(
           userLocation.latitude,
           userLocation.longitude,
-          data['location']['latitude'],
-          data['location']['longitude'],
+          businessLat,
+          businessLng,
         );
 
-        return {
+        businesses.add({
           'id': doc.id,
           ...data,
           'distance': distance,
-        };
-      }).toList();
+        });
+      }
 
       businesses.sort((a, b) => a['distance'].compareTo(b['distance']));
 
       return businesses
-          .where((business) => business['distance'] <= 30000)
+          .where((business) => business['distance'] <= 900000)
           .toList();
     } catch (e) {
       debugPrint('Error fetching businesses: $e');
@@ -137,9 +206,15 @@ class _NearYouSectionState extends State<NearYouSection> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildShimmerLoader();
         }
-        if (snapshot.hasError ||
-            snapshot.data == null ||
-            snapshot.data!.isEmpty) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              snapshot.error.toString(),
+              style: const TextStyle(color: Colors.red),
+            ),
+          );
+        }
+        if (snapshot.data == null || snapshot.data!.isEmpty) {
           return const Center(child: Text('No businesses found nearby.'));
         }
 
@@ -151,7 +226,6 @@ class _NearYouSectionState extends State<NearYouSection> {
             itemCount: businesses.length,
             itemBuilder: (context, index) {
               final business = businesses[index];
-
               return Card(
                 margin: const EdgeInsets.all(8.0),
                 elevation: 3.0,

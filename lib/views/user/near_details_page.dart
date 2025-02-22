@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:localbusiness/views/user/location_utils.dart';
 
 class NearDetailsPage extends StatefulWidget {
   final Map<String, dynamic> businessData;
@@ -13,9 +14,11 @@ class NearDetailsPage extends StatefulWidget {
 
 class _NearDetailsPageState extends State<NearDetailsPage> {
   late GoogleMapController _mapController;
-  LatLng? _userPosition; // User position as nullable
+  LatLng? _userPosition;
   late LatLng _businessPosition;
   final Set<Polyline> _polylines = {};
+  bool _isLoading = false; // Add a loading state
+  String _locationText = "Location";
 
   @override
   void initState() {
@@ -25,21 +28,98 @@ class _NearDetailsPageState extends State<NearDetailsPage> {
       widget.businessData['location']['longitude'],
     );
     _getUserLocation();
+    _getUserLocationName();
   }
 
   Future<void> _getUserLocation() async {
+    setState(() {
+      _isLoading = true; // Start loading
+    });
+
     try {
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-      setState(() {
-        _userPosition = LatLng(position.latitude, position.longitude);
-      });
+
+      if (mounted) {
+        setState(() {
+          _userPosition = LatLng(position.latitude, position.longitude);
+        });
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching user location: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching user location: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false; // Stop loading
+        });
+      }
     }
+  }
+
+  void _navigateToMap() {
+    if (_userPosition == null || _isLoading) {
+      // Show a message if location is not ready
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Please wait while we fetch your location...')),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _MapPage(
+          userPosition: _userPosition,
+          businessPosition: _businessPosition,
+          businessName: widget.businessData['name'],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _getUserLocationName() async {
+    print("posiio:${_businessPosition}");
+    if (_businessPosition != null) {
+      String name = await LocationUtils.getLocationName(
+          _businessPosition.latitude, _businessPosition.longitude);
+      setState(() {
+        _locationText = name;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.businessData['name'] ?? 'Business Details'),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: Image.network(
+              widget.businessData['image'] ?? '',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 200,
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.image_not_supported, size: 100),
+                );
+              },
+            ),
+          ),
+          _buildDetailsCard(),
+        ],
+      ),
+    );
   }
 
   Widget _buildDetailsCard() {
@@ -74,7 +154,7 @@ class _NearDetailsPageState extends State<NearDetailsPage> {
                 Expanded(
                   // Ensure content does not overflow
                   child: Text(
-                    '${widget.businessData['location']['latitude']}, ${widget.businessData['location']['longitude']}',
+                    _locationText,
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
                     maxLines: 1, // Prevent overflow
                     overflow: TextOverflow.ellipsis,
@@ -84,9 +164,14 @@ class _NearDetailsPageState extends State<NearDetailsPage> {
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: _navigateToMap,
+              onPressed: _isLoading
+                  ? null
+                  : _navigateToMap, // Disable button while loading
               icon: const Icon(Icons.directions),
-              label: const Text('Get Directions'),
+              label: _isLoading
+                  ? const CircularProgressIndicator(
+                      color: Colors.white) // Show loading indicator
+                  : const Text('Get Directions'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12.0),
                 textStyle: const TextStyle(fontSize: 16),
@@ -100,47 +185,6 @@ class _NearDetailsPageState extends State<NearDetailsPage> {
       ),
     );
   }
-
-  void _navigateToMap() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => _MapPage(
-          userPosition: _userPosition,
-          businessPosition: _businessPosition,
-          businessName: widget.businessData['name'],
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.businessData['name'] ?? 'Business Details'),
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: Image.network(
-              widget.businessData['image'] ?? '',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  height: 200,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.image_not_supported, size: 100),
-                );
-              },
-            ),
-          ),
-          _buildDetailsCard(),
-        ],
-      ),
-    );
-  }
 }
 
 class _MapPage extends StatelessWidget {
@@ -149,7 +193,6 @@ class _MapPage extends StatelessWidget {
   final String? businessName;
 
   const _MapPage({
-    super.key,
     required this.userPosition,
     required this.businessPosition,
     required this.businessName,

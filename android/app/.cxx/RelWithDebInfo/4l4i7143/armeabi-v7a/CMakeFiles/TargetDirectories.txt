@@ -1,0 +1,2 @@
+C:/Users/calm/Desktop/DISCOVERY/localbusiness/android/app/.cxx/RelWithDebInfo/4l4i7143/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/calm/Desktop/DISCOVERY/localbusiness/android/app/.cxx/RelWithDebInfo/4l4i7143/armeabi-v7a/CMakeFiles/rebuild_cache.dir
