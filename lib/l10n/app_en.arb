@@ -65,7 +65,16 @@
   "restaurant": "Restaurant",
   "coffee": "Coffee",
   "hairdresser": "Hairdresser",
-  "bar": "Bar"
-
-
+  "bar": "Bar",
+  "flag_business": "Flag Business",
+  "flag_business_confirmation": "Are you sure you want to flag this business?",
+  "business_flagged": "Business flagged for review",
+  "flag": "Flag",
+  "cancel": "Cancel",
+  "flag_review": "Flag Review",
+  "flag_review_confirmation": "Are you sure you want to flag this review?",
+  "all": "All",
+  "flagged": "Flagged",
+  "five_star": "5 Star Ratings",
+  "reviewer": "Reviewer"
 }

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:localbusiness/views/user/near_details_page.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
-// Import the new details page
+import 'package:localbusiness/views/user/near_details_page.dart';
+import 'dart:async'; // For Timer
 
 class NearYouSection extends StatefulWidget {
   const NearYouSection({super.key});
@@ -14,18 +15,62 @@ class NearYouSection extends StatefulWidget {
 
 class _NearYouSectionState extends State<NearYouSection> {
   late Future<List<Map<String, dynamic>>> _nearbyBusinesses;
+  final ScrollController _scrollController = ScrollController();
+  Timer? _autoScrollTimer;
+  bool _isUserScrolling = false; // Track user interaction
 
   @override
   void initState() {
     super.initState();
     _nearbyBusinesses = _getNearbyBusinesses();
+    _startAutoScroll();
+  }
+
+  @override
+  void dispose() {
+    _autoScrollTimer?.cancel(); // Cancel the timer
+    _scrollController.dispose(); // Dispose the scroll controller
+    super.dispose();
+  }
+
+  void _startAutoScroll() {
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (!_scrollController.hasClients || _isUserScrolling) return;
+
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final currentScroll = _scrollController.position.pixels;
+
+      if (currentScroll >= maxScroll) {
+        // If at the end, scroll back to the start
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(seconds: 1),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        // Scroll to the next item
+        _scrollController.animateTo(
+          currentScroll + 150, // Adjust this value based on your item width
+          duration: const Duration(seconds: 1),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  void _onScrollStart() {
+    _isUserScrolling = true;
+    _autoScrollTimer?.cancel(); // Pause auto-scroll
+  }
+
+  void _onScrollEnd() {
+    _isUserScrolling = false;
+    _startAutoScroll(); // Resume auto-scroll
   }
 
   Future<Position> _getUserLocation() async {
-    // Check if location services are enabled
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // Optionally prompt the user to enable location services
       bool enableService = await showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -56,7 +101,6 @@ class _NearYouSectionState extends State<NearYouSection> {
       }
     }
 
-    // Check location permissions
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -66,7 +110,6 @@ class _NearYouSectionState extends State<NearYouSection> {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      // Direct user to app settings
       bool openSettings = await showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -88,7 +131,6 @@ class _NearYouSectionState extends State<NearYouSection> {
 
       if (openSettings == true) {
         await Geolocator.openAppSettings();
-        // Re-check permission after returning from settings
         permission = await Geolocator.checkPermission();
         if (permission != LocationPermission.always &&
             permission != LocationPermission.whileInUse) {
@@ -117,7 +159,6 @@ class _NearYouSectionState extends State<NearYouSection> {
         final data = doc.data();
         final location = data['location'] as Map<String, dynamic>?;
 
-        // Skip businesses without location data
         if (location == null) continue;
 
         final double businessLat = location['latitude'] as double? ?? 0.0;
@@ -200,97 +241,131 @@ class _NearYouSectionState extends State<NearYouSection> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _nearbyBusinesses,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildShimmerLoader();
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (notification is ScrollStartNotification) {
+          _onScrollStart(); // Pause auto-scroll on user interaction
+        } else if (notification is ScrollEndNotification) {
+          _onScrollEnd(); // Resume auto-scroll after user interaction
         }
-        if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              snapshot.error.toString(),
-              style: const TextStyle(color: Colors.red),
-            ),
-          );
-        }
-        if (snapshot.data == null || snapshot.data!.isEmpty) {
-          return const Center(child: Text('No businesses found nearby.'));
-        }
+        return true;
+      },
+      child: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _nearbyBusinesses,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return _buildShimmerLoader();
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                snapshot.error.toString(),
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          }
+          if (snapshot.data == null || snapshot.data!.isEmpty) {
+            return const Center(child: Text('No businesses found nearby.'));
+          }
 
-        final businesses = snapshot.data!;
-        return SizedBox(
-          height: 200,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: businesses.length,
-            itemBuilder: (context, index) {
-              final business = businesses[index];
-              return Card(
-                margin: const EdgeInsets.all(8.0),
-                elevation: 3.0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            NearDetailsPage(businessData: business),
-                      ),
-                    );
-                  },
-                  child: SizedBox(
-                    width: 150,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        business['image'] != null
-                            ? ClipRRect(
-                                borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(12.0)),
-                                child: Image.network(
-                                  business['image'],
-                                  height: 100,
-                                  width: 150,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : Container(
-                                height: 100,
-                                width: 150,
-                                color: Colors.grey[300],
-                                child: const Icon(Icons.image, size: 50),
+          final businesses = snapshot.data!;
+          return SizedBox(
+            height: 200,
+            child: ListView.builder(
+              controller: _scrollController,
+              scrollDirection: Axis.horizontal,
+              itemCount: businesses.length,
+              itemBuilder: (context, index) {
+                final business = businesses[index];
+                final List<String> imageUrls =
+                    (business['images'] as List<dynamic>?)?.cast<String>() ??
+                        [];
+
+                return Card(
+                  margin: const EdgeInsets.all(8.0),
+                  elevation: 3.0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              NearDetailsPage(businessData: business),
+                        ),
+                      );
+                    },
+                    child: SizedBox(
+                      width: 150,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Image Carousel
+                          if (imageUrls.isNotEmpty)
+                            SizedBox(
+                              height: 100,
+                              child: PageView.builder(
+                                itemCount: imageUrls.length,
+                                itemBuilder: (context, index) {
+                                  return ClipRRect(
+                                    borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(12.0)),
+                                    child: CachedNetworkImage(
+                                      imageUrl: imageUrls[index],
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) => Container(
+                                        color: Colors.grey[300],
+                                        child:
+                                            const Icon(Icons.image, size: 50),
+                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          Container(
+                                        color: Colors.grey[300],
+                                        child: const Icon(Icons.broken_image,
+                                            size: 50),
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            business['name'] ?? 'Unknown',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 14),
+                            )
+                          else
+                            Container(
+                              height: 100,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.image, size: 50),
+                            ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              business['name'] ?? 'Unknown',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Text(
-                            '${(business['distance'] / 1000).toStringAsFixed(1)} km',
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.grey),
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: Text(
+                              '${(business['distance'] / 1000).toStringAsFixed(1)} km',
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.grey),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-        );
-      },
+                );
+              },
+            ),
+          );
+        },
+      ),
     );
   }
 }

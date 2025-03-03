@@ -65,7 +65,15 @@
   "restaurant": "ምግብ ቤት",
   "coffee": "ቡና ቤት",
   "hairdresser": "ፀጉር አስተካካይ",
-  "bar": "መጠጥ ቤት"
-
-
+  "bar": "መጠጥ ቤት",
+  "flag_business": "Flag Busiess",
+  "flag_business_confirmation": "Are you sure you want to flag this business?",
+  "business_flagged": "Business flagged for review",
+  "flag": "Flag",
+  "cancel": "Cancel",
+   "flag_review": "Flag Review",
+  "flag_review_confirmation": "Are you sure you want to flag this review?",
+  "all": "All",
+  "flagged": "Flagged",
+  "five_star": "5 Star Ratings"
 }

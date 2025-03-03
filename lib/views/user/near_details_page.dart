@@ -19,6 +19,7 @@ class _NearDetailsPageState extends State<NearDetailsPage> {
   final Set<Polyline> _polylines = {};
   bool _isLoading = false; // Add a loading state
   String _locationText = "Location";
+  int _currentImageIndex = 0; // Track current image index for carousel
 
   @override
   void initState() {
@@ -84,7 +85,6 @@ class _NearDetailsPageState extends State<NearDetailsPage> {
   }
 
   Future<void> _getUserLocationName() async {
-    print("posiio:${_businessPosition}");
     if (_businessPosition != null) {
       String name = await LocationUtils.getLocationName(
           _businessPosition.latitude, _businessPosition.longitude);
@@ -96,6 +96,9 @@ class _NearDetailsPageState extends State<NearDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final List<String> imageUrls =
+        (widget.businessData['images'] as List<dynamic>?)?.cast<String>() ?? [];
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.businessData['name'] ?? 'Business Details'),
@@ -103,19 +106,27 @@ class _NearDetailsPageState extends State<NearDetailsPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Image.network(
-              widget.businessData['image'] ?? '',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  height: 200,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.image_not_supported, size: 100),
-                );
+          // Image Carousel
+          if (imageUrls.isNotEmpty)
+            _ImageCarousel(
+              imageUrls: imageUrls,
+              currentIndex: _currentImageIndex,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentImageIndex = index;
+                });
               },
+            )
+          else
+            Container(
+              height: 200,
+              color: Colors.grey[300],
+              child: const Center(
+                child: Icon(Icons.image_not_supported, size: 100),
+              ),
             ),
-          ),
+
+          // Business Details Card
           _buildDetailsCard(),
         ],
       ),
@@ -164,17 +175,19 @@ class _NearDetailsPageState extends State<NearDetailsPage> {
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: _isLoading
-                  ? null
-                  : _navigateToMap, // Disable button while loading
+              onPressed: _isLoading ? null : _navigateToMap,
               icon: const Icon(Icons.directions),
               label: _isLoading
-                  ? const CircularProgressIndicator(
-                      color: Colors.white) // Show loading indicator
+                  ? const Text('Fetching Directions...')
                   : const Text('Get Directions'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12.0),
-                textStyle: const TextStyle(fontSize: 16),
+                textStyle: TextStyle(
+                  fontSize: 16,
+                  fontWeight: _isLoading ? FontWeight.normal : FontWeight.bold,
+                ),
+                backgroundColor: _isLoading ? Colors.grey[300] : Colors.blue,
+                foregroundColor: _isLoading ? Colors.grey : Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.0),
                 ),
@@ -183,6 +196,76 @@ class _NearDetailsPageState extends State<NearDetailsPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ImageCarousel extends StatelessWidget {
+  final List<String> imageUrls;
+  final int currentIndex;
+  final Function(int) onPageChanged;
+
+  const _ImageCarousel({
+    required this.imageUrls,
+    required this.currentIndex,
+    required this.onPageChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Image Carousel
+        SizedBox(
+          height: 200,
+          child: PageView.builder(
+            itemCount: imageUrls.length,
+            onPageChanged: onPageChanged,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: Image.network(
+                    imageUrls[index],
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.broken_image,
+                            size: 50, color: Colors.grey),
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+
+        // Dots Indicator
+        if (imageUrls.length > 1)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                imageUrls.length,
+                (index) => Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                  width: 8.0,
+                  height: 8.0,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: currentIndex == index
+                        ? Colors.blue
+                        : Colors.grey.withOpacity(0.5),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

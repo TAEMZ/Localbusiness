@@ -47,6 +47,7 @@ class AuthService {
         final userDoc =
             await _firestore.collection('users').doc(user.uid).get();
         final data = userDoc.data();
+        print("uid${user.uid}");
         if (data != null) {
           return UserModel(
             uid: user.uid,

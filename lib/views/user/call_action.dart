@@ -1,26 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class CallAction extends StatelessWidget {
+class CallAction {
   final String phone;
 
-  const CallAction({super.key, required this.phone});
+  const CallAction({required this.phone});
+
+  static void launchCaller(String phone) async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: phone);
+
+    if (await canLaunch(phoneUri.toString())) {
+      await launch(phoneUri.toString());
+    } else {
+      throw 'Could not launch phone call';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: const Icon(Icons.phone, color: Colors.green),
-      onPressed: () async {
-        final Uri callUri = Uri(scheme: 'tel', path: phone);
-        if (await canLaunchUrl(callUri)) {
-          await launchUrl(callUri);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cannot place call')),
-          );
-        }
+      icon: const Icon(Icons.call, color: Colors.green),
+      onPressed: () {
+        launchCaller(phone);
       },
-      tooltip: 'Call',
     );
   }
 }

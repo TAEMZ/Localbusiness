@@ -21,16 +21,17 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
 
   // Stream for the businesses
   late Stream<QuerySnapshot> _businessesStream;
+  final user = FirebaseAuth.instance.currentUser;
 
   @override
   void initState() {
     super.initState();
-    final user = FirebaseAuth.instance.currentUser;
+
     if (user != null) {
       // Filter businesses by creatorId
       _businessesStream = FirebaseFirestore.instance
           .collection('businesses')
-          .where('creatorId', isEqualTo: user.uid)
+          .where('creatorId', isEqualTo: user!.uid)
           .snapshots();
     } else {
       _businessesStream = const Stream.empty();
@@ -38,11 +39,19 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
   }
 
   // Pages for navigation
-  List<Widget> get _pages => [
-        _dashboardPage(),
-        const OwnerReviewsPage(),
-        const OwnerAnalyticsPage(),
-      ];
+  // List<Widget> get _pages => [
+  //       _dashboardPage(),
+  //        OwnerReviewsPage(creatorId: user!.uid,),
+  //       const OwnerAnalyticsPage(),
+  //     ];
+  List<Widget> get _pages {
+    // You can directly use the conditional operator to check if the user is not null.
+    return [
+      _dashboardPage(),
+      if (user != null) OwnerReviewsPage(creatorId: user!.uid),
+      const OwnerAnalyticsPage(),
+    ];
+  }
 
   // Dashboard Page UI
   Widget _dashboardPage() {

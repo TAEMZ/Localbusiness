@@ -1,39 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-//not finfished the too part is not filled
-
 class EmailAction extends StatelessWidget {
   final String fetchedEmail;
 
-  const EmailAction({super.key, required this.fetchedEmail});
+  const EmailAction({required this.fetchedEmail});
+
+  static void launchEmail({
+    required String toEmail,
+    required String subject,
+    required String body,
+  }) async {
+    // Encode the subject and body to handle special characters
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: toEmail, // Business email goes here
+      queryParameters: {
+        'subject': Uri.encodeComponent(subject), // Encode subject
+        'body': Uri.encodeComponent(body), // Encode body
+      },
+    );
+
+    // Launch the email client
+    if (await canLaunch(emailUri.toString())) {
+      await launch(emailUri.toString());
+    } else {
+      throw 'Could not launch email';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: const Icon(Icons.email, color: Colors.red),
-      onPressed: () async {
-        // Construct the mailto URI with the fetched email in the "To" section
-        final Uri emailUri = Uri(
-          scheme: 'mailto',
-          path: fetchedEmail, // Use fetched email for the "To" field
-          queryParameters: {
-            'subject': 'Your Subject', // Optional, specify if needed
-            'body': 'Your email body content goes here.', // Optional
-          },
+      icon: const Icon(Icons.email, color: Colors.blue),
+      onPressed: () {
+        launchEmail(
+          toEmail: fetchedEmail, // Business email (creator email)
+          subject: 'Regarding Your Business',
+          body: 'Hello, I would like to inquire about...',
         );
-
-        // Check if the email client can be launched
-        if (await canLaunchUrl(emailUri)) {
-          await launchUrl(
-              emailUri); // Open the email client with the "To" field filled
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cannot send email')),
-          );
-        }
       },
-      tooltip: 'Email',
     );
   }
 }

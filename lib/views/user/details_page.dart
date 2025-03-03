@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -8,8 +9,63 @@ import 'package:share_plus/share_plus.dart';
 
 class DetailsPage extends StatelessWidget {
   final String businessId;
+  final String creatorId;
 
-  const DetailsPage({super.key, required this.businessId});
+  const DetailsPage(
+      {super.key, required this.businessId, required this.creatorId});
+
+  Future<void> _flagBusiness(
+      BuildContext context, String businessId, String creatorId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(AppLocalizations.of(context)!.flag_business),
+        content: Text(AppLocalizations.of(context)!.flag_business_confirmation),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(AppLocalizations.of(context)!.flag),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+        if (currentUserId == null) return;
+
+        // ✅ Flag the business in Firestore
+        await FirebaseFirestore.instance
+            .collection('businesses')
+            .doc(businessId)
+            .update({
+          'flags': FieldValue.increment(1),
+          'flaggedAt': FieldValue.serverTimestamp(),
+        });
+
+        // ✅ Update the business owner's `totalFlagsReceived`
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(creatorId) // ✅ Business owner's ID
+            .update({
+          'totalFlagsReceived': FieldValue.increment(1),
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Business flagged successfully!')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error flagging business: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +74,9 @@ class DetailsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(localization.business_details),
+        backgroundColor: Colors.blueAccent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
@@ -43,60 +102,54 @@ class DetailsPage extends StatelessWidget {
           final String phone = businessData['phone'] ?? 'N/A';
           final String email = businessData['email'] ?? 'N/A';
           final String category = businessData['category'] ?? 'No Category';
+          final String imageUrl = businessData['image'] ??
+              'https://via.placeholder.com/150'; // Placeholder image
 
           return SingleChildScrollView(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header with Name
-                // Header with Name and Category
+                // Hero Image
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20.0,
-                    vertical: 25.0,
-                  ),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.blueAccent, Colors.lightBlue],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: NetworkImage(imageUrl),
+                      fit: BoxFit.cover,
                     ),
                   ),
+                ),
+
+                // Business Name and Category
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Business Name
                       Text(
                         name,
                         style: const TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                              blurRadius: 5.0,
-                              color: Colors.black45,
-                              offset: Offset(2.0, 2.0),
-                            ),
-                          ],
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueAccent,
                         ),
                       ),
-                      const SizedBox(height: 8.0),
-                      // Business Category
+                      const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12.0,
-                          vertical: 6.0,
+                          horizontal: 12,
+                          vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white70,
-                          borderRadius: BorderRadius.circular(20.0),
+                          color: Colors.blueAccent.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           category,
                           style: const TextStyle(
                             fontSize: 16,
+                            color: Colors.blueAccent,
                             fontWeight: FontWeight.w500,
-                            color: Colors.black87,
                           ),
                         ),
                       ),
@@ -104,22 +157,24 @@ class DetailsPage extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 20.0),
+                // Divider
+                const Divider(thickness: 1, height: 1),
 
                 // Description Section
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Description',
+                        'About',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
+                          color: Colors.blueAccent,
                         ),
                       ),
-                      const SizedBox(height: 10.0),
+                      const SizedBox(height: 10),
                       Text(
                         description,
                         style: const TextStyle(
@@ -131,81 +186,101 @@ class DetailsPage extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 20.0),
+                // Divider
+                const Divider(thickness: 1, height: 1),
 
                 // Business Details
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildDetailCard(localization.opening_hrs, openingHours),
-                      _buildDetailCard(localization.closing_hrs, closingHours),
-                      const SizedBox(height: 20.0),
+                      const Text(
+                        'Details',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueAccent,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      _buildDetailCard('Opening Hours', openingHours),
+                      _buildDetailCard('Closing Hours', closingHours),
+                      _buildDetailCard('Phone', phone),
+                      _buildDetailCard('Email', email),
+                    ],
+                  ),
+                ),
 
-                      // Action Buttons
+                // Divider
+                const Divider(thickness: 1, height: 1),
+
+                // Action Buttons
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Actions',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueAccent,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          Column(
-                            children: [
-                              CallAction(phone: phone),
-                              const SizedBox(height: 5),
-                              const Text(
-                                'Call',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                            ],
+                          _buildActionButton(
+                            icon: Icons.call,
+                            label: 'Call',
+                            color: Colors.green,
+                            onPressed: () {
+                              CallAction.launchCaller(phone);
+                            },
                           ),
-                          Column(
-                            children: [
-                              EmailAction(
-                                fetchedEmail: email,
-                              ),
-                              const SizedBox(height: 5),
-                              const Text(
-                                'Email',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                            ],
+                          _buildActionButton(
+                            icon: Icons.email,
+                            label: 'Email',
+                            color: Colors.blue,
+                            onPressed: () {
+                              EmailAction.launchEmail(
+                                toEmail: email,
+                                subject: 'Regarding $name',
+                                body: 'Hello, I would like to inquire about...',
+                              );
+                            },
                           ),
-                          Column(
-                            children: [
-                              IconButton(
-                                icon:
-                                    const Icon(Icons.share, color: Colors.blue),
-                                onPressed: () {
-                                  Share.share(
-                                    'Check out $name!\n\n$description\n\nPhone: $phone\nEmail: $email',
-                                  );
-                                },
-                                tooltip: 'Share',
-                              ),
-                              const SizedBox(height: 5),
-                              const Text(
-                                'Share',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                            ],
+                          _buildActionButton(
+                            icon: Icons.share,
+                            label: 'Share',
+                            color: Colors.blueAccent,
+                            onPressed: () {
+                              Share.share(
+                                'Check out $name!\n\n$description\n\nPhone: $phone\nEmail: $email',
+                              );
+                            },
                           ),
-                          Column(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.rate_review,
-                                    color: Colors.orange),
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) =>
-                                        ReviewPage(businessId: businessId),
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 5),
-                              const Text(
-                                'Review',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                            ],
+                          _buildActionButton(
+                            icon: Icons.rate_review,
+                            label: 'Review',
+                            color: Colors.orange,
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) =>
+                                    ReviewPage(businessId: businessId),
+                              );
+                            },
+                          ),
+                          _buildActionButton(
+                            icon: Icons.flag,
+                            label: AppLocalizations.of(context)!.flag,
+                            color: Colors.red,
+                            onPressed: () =>
+                                _flagBusiness(context, businessId, creatorId),
                           ),
                         ],
                       ),
@@ -223,14 +298,49 @@ class DetailsPage extends StatelessWidget {
   // Helper method to build detail cards
   Widget _buildDetailCard(String title, String value) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: ListTile(
         title: Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.blueAccent,
+          ),
         ),
-        subtitle: Text(value),
+        subtitle: Text(
+          value,
+          style: const TextStyle(fontSize: 16),
+        ),
       ),
+    );
+  }
+
+  // Helper method to build action buttons
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return Column(
+      children: [
+        IconButton(
+          icon: Icon(icon, color: color, size: 32),
+          onPressed: onPressed,
+        ),
+        const SizedBox(height: 5),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 }

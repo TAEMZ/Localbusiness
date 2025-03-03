@@ -112,7 +112,7 @@ class _UserHomePageState extends State<UserHomePage> {
         onLogout: () async {
           if (!widget.isGuest) {
             await FirebaseAuth.instance.signOut();
-            Navigator.pushReplacementNamed(context, '/welcome');
+            Navigator.pushReplacementNamed(context, '/welcome_page');
           }
         },
       ),

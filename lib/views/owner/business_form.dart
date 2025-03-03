@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:localbusiness/utils/send_notification.dart';
+import 'package:localbusiness/widgets/custom_text_field.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'pick_location_page.dart';
@@ -148,11 +150,9 @@ class _BusinessFormState extends State<BusinessForm> {
         throw Exception('User not authenticated');
       }
 
-      // Ensure creatorId is set
-      businessData['creatorId'] = user.uid; // This is critical
+      businessData['creatorId'] = user.uid;
       businessData['creatorEmail'] = user.email;
 
-      // Add location and image data
       if (_uploadedImageUrls.isNotEmpty) {
         businessData['images'] = _uploadedImageUrls;
       }
@@ -163,14 +163,33 @@ class _BusinessFormState extends State<BusinessForm> {
         };
       }
 
-      // Add to Firestore
-      await FirebaseFirestore.instance
-          .collection('businesses')
-          .add(businessData);
+      /// ✅ **Check if editing an existing business**
+      if (widget.business != null && widget.business!['id'] != null) {
+        // 🔥 **UPDATE the existing business**
+        await FirebaseFirestore.instance
+            .collection('businesses')
+            .doc(widget.business!['id']) // Existing business ID
+            .update(businessData);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Business updated successfully!')),
+        );
+      } else {
+        // ✅ **CREATE a new business**
+        DocumentReference businessRef = await FirebaseFirestore.instance
+            .collection('businesses')
+            .add(businessData);
+
+        await SendNotification.sendNotificationToServer(
+            businessData, businessRef.id);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Business added successfully!')),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Failed to save business. Please try again.')),
+        SnackBar(content: Text('Failed to save business: $e')),
       );
     }
   }
@@ -235,47 +254,71 @@ class _BusinessFormState extends State<BusinessForm> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    TextField(
-                      controller: nameController,
-                      decoration: InputDecoration(
-                          labelText: localization.business_name),
-                    ),
-                    TextField(
-                      controller: descriptionController,
-                      decoration:
-                          InputDecoration(labelText: localization.description),
-                    ),
-                    TextField(
-                      controller: phoneController,
-                      decoration:
-                          InputDecoration(labelText: localization.phone),
-                    ),
-                    TextField(
-                      controller: cityController,
-                      decoration: InputDecoration(labelText: localization.city),
-                    ),
+                    CustomTextField(
+                        hintText: localization.business_name,
+                        controller: nameController),
                     const SizedBox(height: 10),
-                    DropdownButtonFormField<String>(
-                      value: selectedCategory,
-                      decoration:
-                          InputDecoration(labelText: localization.catagory),
-                      items: categories
-                          .map((category) => DropdownMenuItem(
-                                value: category,
-                                child: Text(category),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
+                    CustomTextField(
+                        hintText: localization.description,
+                        controller: descriptionController),
+                    const SizedBox(height: 10),
+                    CustomTextField(
+                        hintText: localization.phone,
+                        controller: phoneController),
+                    const SizedBox(height: 10),
+                    CustomTextField(
+                        hintText: localization.city,
+                        controller: cityController),
+                    const SizedBox(height: 10),
+                    // DropdownButtonFormField<String>(
+                    //   value: selectedCategory,
+                    //   decoration:
+                    //       InputDecoration(labelText: localization.catagory),
+                    //   items: categories
+                    //       .map((category) => DropdownMenuItem(
+                    //             value: category,
+                    //             child: Text(category),
+                    //           ))
+                    //       .toList(),
+                    //   onChanged: (value) {
+                    //     setState(() {
+                    //       selectedCategory = value;
+                    //     });
+                    //   },
+                    // ),
+                    _buildDropdown(
+                      localization
+                          .catagory, // label (e.g., "Category" from localization)
+                      categories, // list of categories directly
+                      (value) {
+                        // onChanged function to update the selected value
                         setState(() {
                           selectedCategory = value;
                         });
                       },
                     ),
                     const SizedBox(height: 10),
-                    TextButton(
+                    IconButton(
                       onPressed: pickImages,
-                      child: Text(
-                          'Add Images (${_pickedImages.length + _uploadedImageUrls.length})'),
+                      icon: Row(
+                        mainAxisSize: MainAxisSize.min, // Keeps the row compact
+                        children: [
+                          const Icon(
+                            Icons.camera_alt,
+                            color: Color.fromARGB(255, 192, 128, 255),
+                            size: 30,
+                          ),
+                          const SizedBox(
+                              width: 8), // Spacing between icon and text
+                          Text(
+                            '(${_pickedImages.length + _uploadedImageUrls.length})',
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 168, 128, 255),
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     if (_pickedImages.isNotEmpty ||
                         _uploadedImageUrls.isNotEmpty)
@@ -305,20 +348,19 @@ class _BusinessFormState extends State<BusinessForm> {
                           },
                         ),
                       ),
-                    TextField(
-                      controller: openingController,
-                      decoration:
-                          InputDecoration(labelText: localization.opening_hrs),
-                    ),
-                    TextField(
-                      controller: closingController,
-                      decoration:
-                          InputDecoration(labelText: localization.closing_hrs),
-                    ),
+                    CustomTextField(
+                        hintText: localization.opening_hrs,
+                        controller: openingController),
+                    const SizedBox(height: 20),
+                    CustomTextField(
+                        hintText: localization.closing_hrs,
+                        controller: closingController),
+                    const SizedBox(height: 20),
                     if (userEmail != null)
                       Text('Creator Email: $userEmail',
                           style: const TextStyle(
-                              fontStyle: FontStyle.italic, color: Colors.blue)),
+                              fontStyle: FontStyle.italic,
+                              color: Color.fromARGB(255, 206, 185, 255))),
                     const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: pickLocation,
@@ -341,6 +383,27 @@ class _BusinessFormState extends State<BusinessForm> {
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildDropdown(
+      String label, List<String> items, ValueChanged? onChanged) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: DropdownButtonFormField(
+        items: items
+            .map((item) => DropdownMenuItem(
+                  value: item,
+                  child: Text(item),
+                ))
+            .toList(),
+        onChanged: onChanged,
+        validator: (value) => value == null ? 'Please select a $label' : null,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+      ),
     );
   }
 }

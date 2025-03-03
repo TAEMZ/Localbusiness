@@ -63,7 +63,7 @@ class FilteredBusinessPage extends StatelessWidget {
       }).toList();
 
       // Filter businesses within a certain distance (e.g., 10 km)
-      const maxDistance = 10000; // 10 km in meters
+      const maxDistance = 1000000; // 10 km in meters
       final nearbyBusinesses = businesses.where((business) {
         return business['distance'] <= maxDistance;
       }).toList();

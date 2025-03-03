@@ -2,25 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:localbusiness/views/auth/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Localization
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'firebase_options.dart';
+import 'views/admin/admin_dashboard.dart';
+import 'views/auth/splash_screen.dart';
 import 'views/auth/welcome_page.dart';
 import 'views/auth/signup_user_page.dart';
 import 'views/auth/signup_owner_page.dart';
 import 'views/auth/login_page.dart';
 import 'views/user/user_home_page.dart';
 import 'views/owner/owner_dashboard.dart';
-import 'firebase_options.dart';
-import 'package:localbusiness/widgets/theme_provider.dart'; // Import ThemeProvider
-import 'package:localbusiness/widgets/locale_provider.dart'; // Import LocaleProvider
+import 'widgets/theme_provider.dart';
+import 'widgets/locale_provider.dart';
+import 'models/firebase_notifications.dart'; // ✅ Import Firebase Notifications
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // ✅ Initialize Firebase Notifications
+  await FirebaseNotificationService.initialize();
 
   runApp(
     MultiProvider(
@@ -70,14 +75,21 @@ class MyApp extends StatelessWidget {
         '/login_owner': (context) => LoginPage(userRole: 'owner'),
         '/user_home': (context) => const UserHomePage(),
         '/owner_dashboard': (context) => const OwnerDashboard(),
+        '/admin_dashboard': (context) => const AdminDashboard(),
+        '/welcome_page': (context) => const WelcomePage()
       },
     );
   }
 }
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
   Future<Widget> determineStartPage() async {
     final User? user = FirebaseAuth.instance.currentUser;
 
@@ -92,7 +104,9 @@ class AuthWrapper extends StatelessWidget {
           .get();
       final role = userDoc['role'] ?? 'user';
 
-      if (role == 'owner') {
+      if (role == 'admin') {
+        return const AdminDashboard();
+      } else if (role == 'owner') {
         return const OwnerDashboard();
       } else {
         return const UserHomePage();
@@ -101,6 +115,13 @@ class AuthWrapper extends StatelessWidget {
       print('AuthWrapper Error: $e');
       return const WelcomePage();
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    FirebaseNotificationService.subscribeToTopic(
+        "business_updates"); // ✅ Auto-subscribe users
   }
 
   @override

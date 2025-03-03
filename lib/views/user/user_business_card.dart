@@ -10,7 +10,6 @@ class UserBusinessCard extends StatefulWidget {
   final Map<String, dynamic> businessData;
   final VoidCallback? onRemove;
   final double? distance;
-  // Callback to handle removal (optional)
 
   const UserBusinessCard({
     super.key,
@@ -32,8 +31,7 @@ class _UserBusinessCardState extends State<UserBusinessCard> {
       final userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId == null) return;
 
-      final docId =
-          widget.businessData['id']; // Firestore document ID for the business
+      final docId = widget.businessData['id'];
       final collectionRef = FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
@@ -59,8 +57,10 @@ class _UserBusinessCardState extends State<UserBusinessCard> {
     final String name = widget.businessData['name'] ?? 'No Name';
     final String description =
         widget.businessData['description'] ?? 'No Description';
-    final String imageUrl = widget.businessData['image'] ?? '';
+    final List<String> imageUrls =
+        (widget.businessData['images'] as List<dynamic>?)?.cast<String>() ?? [];
     final String businessId = widget.businessData['id'] ?? '';
+    final String creatorId = widget.businessData['creatorId'];
 
     return Card(
       margin: const EdgeInsets.all(12.0),
@@ -71,7 +71,8 @@ class _UserBusinessCardState extends State<UserBusinessCard> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => DetailsPage(businessId: businessId),
+              builder: (context) =>
+                  DetailsPage(businessId: businessId, creatorId: creatorId),
             ),
           );
         },
@@ -86,33 +87,24 @@ class _UserBusinessCardState extends State<UserBusinessCard> {
                   onPressed: () {
                     if (widget.onRemove != null) {
                       widget.onRemove!();
-                      setState(
-                          () {}); // Trigger a UI update to instantly reflect removal
+                      setState(() {});
                     }
                   },
                   tooltip: 'Remove',
                 ),
               ),
 
-            // Business Image
-            imageUrl.isNotEmpty
-                ? ClipRRect(
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(12.0)),
-                    child: Image.network(
-                      imageUrl,
-                      height: 150,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : Container(
-                    height: 150,
-                    color: Colors.grey[300],
-                    child: const Center(
-                      child: Icon(Icons.image, size: 50, color: Colors.grey),
-                    ),
-                  ),
+            // Image Carousel
+            if (imageUrls.isNotEmpty)
+              _ImageCarousel(imageUrls: imageUrls)
+            else
+              Container(
+                height: 150,
+                color: Colors.grey[300],
+                child: const Center(
+                  child: Icon(Icons.image, size: 50, color: Colors.grey),
+                ),
+              ),
 
             // Business Details
             Padding(
@@ -132,7 +124,6 @@ class _UserBusinessCardState extends State<UserBusinessCard> {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
-                  // Display Distance (only if provided)
                   if (widget.distance != null)
                     Row(
                       children: [
@@ -140,7 +131,7 @@ class _UserBusinessCardState extends State<UserBusinessCard> {
                             color: Colors.red, size: 16),
                         const SizedBox(width: 4),
                         Text(
-                          '${(widget.distance! / 1000).toStringAsFixed(1)} km away', // Convert meters to km
+                          '${(widget.distance! / 1000).toStringAsFixed(1)} km away',
                           style:
                               const TextStyle(fontSize: 14, color: Colors.grey),
                         ),
@@ -184,6 +175,81 @@ class _UserBusinessCardState extends State<UserBusinessCard> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ImageCarousel extends StatefulWidget {
+  final List<String> imageUrls;
+
+  const _ImageCarousel({required this.imageUrls});
+
+  @override
+  _ImageCarouselState createState() => _ImageCarouselState();
+}
+
+class _ImageCarouselState extends State<_ImageCarousel> {
+  int _currentPage = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Image Carousel
+        SizedBox(
+          height: 150,
+          child: PageView.builder(
+            itemCount: widget.imageUrls.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentPage = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.0),
+                  child: Image.network(
+                    widget.imageUrls[index],
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.broken_image,
+                            size: 50, color: Colors.grey),
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+
+        // Dots Indicator
+        if (widget.imageUrls.length > 1)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                widget.imageUrls.length,
+                (index) => Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                  width: 8.0,
+                  height: 8.0,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _currentPage == index
+                        ? Colors.blue
+                        : Colors.grey.withOpacity(0.5),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
