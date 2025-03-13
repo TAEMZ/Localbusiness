@@ -244,9 +244,9 @@ class _NearYouSectionState extends State<NearYouSection> {
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (notification is ScrollStartNotification) {
-          _onScrollStart(); // Pause auto-scroll on user interaction
+          _onScrollStart();
         } else if (notification is ScrollEndNotification) {
-          _onScrollEnd(); // Resume auto-scroll after user interaction
+          _onScrollEnd();
         }
         return true;
       },
@@ -254,115 +254,107 @@ class _NearYouSectionState extends State<NearYouSection> {
         future: _nearbyBusinesses,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return _buildShimmerLoader();
+            return _buildShimmerLoader(); // Use shimmer loader while loading
           }
-          if (snapshot.hasError) {
-            return Center(
+          if (snapshot.hasError ||
+              snapshot.data == null ||
+              snapshot.data!.isEmpty) {
+            return const Center(
               child: Text(
-                snapshot.error.toString(),
-                style: const TextStyle(color: Colors.red),
+                'No businesses found nearby.',
+                style: TextStyle(color: Colors.grey),
               ),
             );
           }
-          if (snapshot.data == null || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No businesses found nearby.'));
-          }
 
           final businesses = snapshot.data!;
-          return SizedBox(
-            height: 200,
-            child: ListView.builder(
-              controller: _scrollController,
-              scrollDirection: Axis.horizontal,
-              itemCount: businesses.length,
-              itemBuilder: (context, index) {
-                final business = businesses[index];
-                final List<String> imageUrls =
-                    (business['images'] as List<dynamic>?)?.cast<String>() ??
-                        [];
+          return ListView.builder(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            itemCount: businesses.length,
+            itemBuilder: (context, index) {
+              final business = businesses[index];
+              final List<String> imageUrls =
+                  (business['images'] as List<dynamic>?)?.cast<String>() ?? [];
 
-                return Card(
-                  margin: const EdgeInsets.all(8.0),
-                  elevation: 3.0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              NearDetailsPage(businessData: business),
-                        ),
-                      );
-                    },
-                    child: SizedBox(
-                      width: 150,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Image Carousel
-                          if (imageUrls.isNotEmpty)
-                            SizedBox(
-                              height: 100,
-                              child: PageView.builder(
-                                itemCount: imageUrls.length,
-                                itemBuilder: (context, index) {
-                                  return ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(
-                                        top: Radius.circular(12.0)),
-                                    child: CachedNetworkImage(
-                                      imageUrl: imageUrls[index],
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) => Container(
-                                        color: Colors.grey[300],
-                                        child:
-                                            const Icon(Icons.image, size: 50),
-                                      ),
-                                      errorWidget: (context, url, error) =>
-                                          Container(
-                                        color: Colors.grey[300],
-                                        child: const Icon(Icons.broken_image,
-                                            size: 50),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            )
-                          else
-                            Container(
-                              height: 100,
-                              color: Colors.grey[300],
-                              child: const Icon(Icons.image, size: 50),
-                            ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              business['name'] ?? 'Unknown',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                          ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                            child: Text(
-                              '${(business['distance'] / 1000).toStringAsFixed(1)} km',
-                              style: const TextStyle(
-                                  fontSize: 12, color: Colors.grey),
-                            ),
-                          ),
-                        ],
+              return Card(
+                margin: const EdgeInsets.all(8.0),
+                elevation: 3.0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            NearDetailsPage(businessData: business),
                       ),
+                    );
+                  },
+                  child: SizedBox(
+                    width: 150,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (imageUrls.isNotEmpty)
+                          SizedBox(
+                            height: 100,
+                            child: PageView.builder(
+                              itemCount: imageUrls.length,
+                              itemBuilder: (context, index) {
+                                return ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(12.0)),
+                                  child: CachedNetworkImage(
+                                    imageUrl: imageUrls[index],
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => Container(
+                                      color: Colors.grey[300],
+                                      child: const Icon(Icons.image, size: 50),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        Container(
+                                      color: Colors.grey[300],
+                                      child: const Icon(Icons.broken_image,
+                                          size: 50),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          )
+                        else
+                          Container(
+                            height: 100,
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.image, size: 50),
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            business['name'] ?? 'Unknown',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Text(
+                            '${(business['distance'] / 1000).toStringAsFixed(1)} km',
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.grey),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           );
         },
       ),

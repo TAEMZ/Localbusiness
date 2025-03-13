@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+import 'package:localbusiness/widgets/custom_text_field.dart';
 
 class AuthModal extends StatefulWidget {
   final String role; // 'user' or 'owner'
@@ -16,6 +17,13 @@ class _AuthModalState extends State<AuthModal>
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _isObscured = true;
+
+  void _toggleObscurity() {
+    setState(() {
+      _isObscured = !_isObscured;
+    });
+  }
 
   @override
   void initState() {
@@ -143,18 +151,10 @@ class _AuthModalState extends State<AuthModal>
 
   Widget _buildTabBar() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(10),
-      ),
       child: TabBar(
         controller: _tabController,
         labelColor: Colors.white,
         unselectedLabelColor: Colors.white.withOpacity(0.7),
-        indicator: BoxDecoration(
-          color: Colors.white.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(10),
-        ),
         tabs: const [
           Tab(text: 'Login'),
           Tab(text: 'Sign Up'),
@@ -187,11 +187,22 @@ class _AuthModalState extends State<AuthModal>
             icon: Icons.email,
           ),
           const SizedBox(height: 15),
-          _buildTextField(
+          // _buildTextField(
+          //   controller: _passwordController,
+          //   label: 'Password',
+          //   icon: Icons.lock,
+          //   isPassword: true,
+          // ),
+          CustomTextField(
+            hintText: "Password",
             controller: _passwordController,
-            label: 'Password',
-            icon: Icons.lock,
-            isPassword: true,
+            isObscureText: _isObscured,
+            suffixIcon: IconButton(
+                icon: Icon(
+                  _isObscured ? Icons.visibility_off : Icons.visibility_sharp,
+                  color: Colors.grey,
+                ),
+                onPressed: _toggleObscurity),
           ),
           if (isLogin) _buildForgotPasswordButton(),
           const SizedBox(height: 10),
@@ -308,7 +319,7 @@ class _AuthModalState extends State<AuthModal>
     required VoidCallback onPressed,
   }) {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         shape: BoxShape.circle,
         color: Colors.white, // Adjust color as needed
       ),

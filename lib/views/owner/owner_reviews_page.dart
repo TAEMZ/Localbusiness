@@ -64,7 +64,7 @@ class _OwnerReviewsPageState extends State<OwnerReviewsPage> {
             .collection('users')
             .doc(userId)
             .update({
-          'totalFlagsRecieved': FieldValue.increment(1),
+          'totalFlagsReceived': FieldValue.increment(1),
         });
 
         ScaffoldMessenger.of(context).showSnackBar(

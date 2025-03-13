@@ -136,72 +136,69 @@ class _ReviewsListState extends State<ReviewsList> {
       future: _fetchReviews,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildShimmerLoader();
+          return _buildShimmerLoader(); // Use shimmer loader while loading
         }
         if (snapshot.hasError ||
             snapshot.data == null ||
             snapshot.data!.isEmpty) {
-          return const Center(child: Text('No reviews available.'));
+          return const Center(
+            child: Text(
+              'No reviews available.',
+              style: TextStyle(color: Colors.grey),
+            ),
+          );
         }
 
         final reviews = snapshot.data!;
-        return SizedBox(
-          height: 150, // Fixed height for horizontal scrolling
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: reviews.length,
-            itemBuilder: (context, index) {
-              final review = reviews[index];
-              return Card(
-                margin: const EdgeInsets.all(8.0),
-                elevation: 3.0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
+        return ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: reviews.length,
+          itemBuilder: (context, index) {
+            final review = reviews[index];
+            return Card(
+              margin: const EdgeInsets.all(8.0),
+              elevation: 3.0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              child: Container(
+                width: 200,
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review['businessName'] ?? 'No Business Name',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      review['name'] ?? 'Anonymous',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: List.generate(
+                        review['rating']?.toInt() ?? 0,
+                        (index) => const Icon(Icons.star,
+                            color: Colors.amber, size: 16),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      review['comment'] ?? '',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  ],
                 ),
-                child: Container(
-                  width: 200,
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Business Name
-                      Text(
-                        review['businessName'] ?? 'No Business Name',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Reviewer's Name
-                      Text(
-                        review['name'] ?? 'Anonymous',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      const SizedBox(height: 8),
-                      // Star Rating
-                      Row(
-                        children: List.generate(
-                          review['rating']?.toInt() ?? 0,
-                          (index) => const Icon(Icons.star,
-                              color: Colors.amber, size: 16),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Comment
-                      Text(
-                        review['comment'] ?? '',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style:
-                            const TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         );
       },
     );

@@ -7,7 +7,6 @@ class BusinessShortcuts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localization = AppLocalizations.of(context)!;
     final List<Map<String, dynamic>> shortcuts = [
       {'icon': Icons.restaurant, 'label': 'Restaurants'},
       {'icon': Icons.cut, 'label': 'Hairdresser'},

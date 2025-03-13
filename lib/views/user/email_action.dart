@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 class EmailAction extends StatelessWidget {
   final String fetchedEmail;
 
-  const EmailAction({required this.fetchedEmail});
+  const EmailAction({super.key, required this.fetchedEmail});
 
   static void launchEmail({
     required String toEmail,

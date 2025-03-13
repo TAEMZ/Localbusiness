@@ -8,6 +8,7 @@ import 'business_form.dart';
 import 'business_detail_page.dart';
 import '../shared/drawer.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:convex_bottom_bar/convex_bottom_bar.dart'; // ✅ New Package
 
 class OwnerDashboard extends StatefulWidget {
   const OwnerDashboard({super.key});
@@ -18,17 +19,13 @@ class OwnerDashboard extends StatefulWidget {
 
 class _OwnerDashboardState extends State<OwnerDashboard> {
   int _currentIndex = 0;
-
-  // Stream for the businesses
   late Stream<QuerySnapshot> _businessesStream;
   final user = FirebaseAuth.instance.currentUser;
 
   @override
   void initState() {
     super.initState();
-
     if (user != null) {
-      // Filter businesses by creatorId
       _businessesStream = FirebaseFirestore.instance
           .collection('businesses')
           .where('creatorId', isEqualTo: user!.uid)
@@ -38,14 +35,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
     }
   }
 
-  // Pages for navigation
-  // List<Widget> get _pages => [
-  //       _dashboardPage(),
-  //        OwnerReviewsPage(creatorId: user!.uid,),
-  //       const OwnerAnalyticsPage(),
-  //     ];
   List<Widget> get _pages {
-    // You can directly use the conditional operator to check if the user is not null.
     return [
       _dashboardPage(),
       if (user != null) OwnerReviewsPage(creatorId: user!.uid),
@@ -53,7 +43,6 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
     ];
   }
 
-  // Dashboard Page UI
   Widget _dashboardPage() {
     final localization = AppLocalizations.of(context)!;
     return StreamBuilder<QuerySnapshot>(
@@ -70,7 +59,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
           final data = doc.data() as Map<String, dynamic>;
           return {
             ...data,
-            'id': doc.id, // Add the Firestore document ID for further use
+            'id': doc.id,
           };
         }).toList();
 
@@ -84,7 +73,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => BusinessDetailPage(
-                      business: business, // Pass the selected business data
+                      business: business,
                     ),
                   ),
                 );
@@ -105,11 +94,14 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
         title: Text(localization.owner_dashboard),
       ),
       drawer: SharedDrawer(
-        email: 'owner@example.com', // Replace with actual email
-        role: 'Owner', // Replace with actual role
-        onLogout: () {},
+        email: user?.email ?? 'owner@example.com',
+        role: 'Owner',
+        onLogout: () async {
+          await FirebaseAuth.instance.signOut();
+          Navigator.pushReplacementNamed(context, '/welcome_page');
+        },
       ),
-      body: _pages[_currentIndex], // Display the selected page
+      body: _pages[_currentIndex],
       floatingActionButton: _currentIndex == 0
           ? FloatingActionButton(
               onPressed: () {
@@ -122,25 +114,22 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
               },
               child: const Icon(Icons.add),
             )
-          : null, // FloatingActionButton is only visible on the dashboard page
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
+          : null,
+      // ✅ Stylish Bottom Navigation
+      bottomNavigationBar: ConvexAppBar(
+        backgroundColor: const Color.fromARGB(255, 211, 185, 255),
+        color: Colors.white,
+        activeColor: const Color.fromARGB(255, 227, 250, 255),
+        initialActiveIndex: _currentIndex,
         onTap: (index) {
           setState(() {
             _currentIndex = index;
           });
         },
         items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home),
-            label: localization.home,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.reviews),
-            label: localization.review,
-          ),
-          BottomNavigationBarItem(
-              icon: const Icon(Icons.analytics), label: localization.analytics),
+          TabItem(icon: Icons.home, title: localization.home),
+          TabItem(icon: Icons.reviews, title: localization.review),
+          TabItem(icon: Icons.analytics, title: localization.analytics),
         ],
       ),
     );

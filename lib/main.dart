@@ -16,7 +16,10 @@ import 'views/user/user_home_page.dart';
 import 'views/owner/owner_dashboard.dart';
 import 'widgets/theme_provider.dart';
 import 'widgets/locale_provider.dart';
-import 'models/firebase_notifications.dart'; // ✅ Import Firebase Notifications
+import 'models/firebase_notifications.dart';
+
+import 'package:flutter_gemini/flutter_gemini.dart';
+import 'consts.dart'; // ✅ Import Firebase Notifications
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +29,7 @@ void main() async {
 
   // ✅ Initialize Firebase Notifications
   await FirebaseNotificationService.initialize();
+  Gemini.init(apiKey: GEMINI_API_KEY);
 
   runApp(
     MultiProvider(

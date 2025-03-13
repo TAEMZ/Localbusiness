@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'pick_location_page.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:localbusiness/views/owner/descriptoin_genarator.dart';
 
 class BusinessForm extends StatefulWidget {
   final Function(Map<String, dynamic>)? onSubmit;
@@ -79,11 +80,9 @@ class _BusinessFormState extends State<BusinessForm> {
     final picker = ImagePicker();
     final pickedFiles = await picker.pickMultiImage();
 
-    if (pickedFiles != null) {
-      setState(() {
-        _pickedImages = pickedFiles.map((file) => File(file.path)).toList();
-      });
-    }
+    setState(() {
+      _pickedImages = pickedFiles.map((file) => File(file.path)).toList();
+    });
   }
 
   Future<void> uploadImagesToCloudinary() async {
@@ -194,6 +193,44 @@ class _BusinessFormState extends State<BusinessForm> {
     }
   }
 
+  Future<void> _generateDescription() async {
+    if (nameController.text.isEmpty ||
+        selectedCategory == null ||
+        cityController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Please fill in the name, category, and city fields to generate a description.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final description = await AIDescriptionGenerator.generateDescription(
+        name: nameController.text.trim(),
+        category: selectedCategory!,
+        city: cityController.text.trim(),
+      );
+
+      setState(() {
+        descriptionController.text = description;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to generate description: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   void _validateAndSubmit() async {
     if (nameController.text.trim().isEmpty ||
         descriptionController.text.trim().isEmpty ||
@@ -259,12 +296,23 @@ class _BusinessFormState extends State<BusinessForm> {
                         controller: nameController),
                     const SizedBox(height: 10),
                     CustomTextField(
-                        hintText: localization.description,
-                        controller: descriptionController),
-                    const SizedBox(height: 10),
-                    CustomTextField(
                         hintText: localization.phone,
                         controller: phoneController),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CustomTextField(
+                              hintText: localization.description,
+                              controller: descriptionController),
+                        ),
+                        IconButton(
+                          onPressed: _generateDescription,
+                          icon: const Icon(Icons.auto_awesome),
+                          tooltip: 'Generate Description',
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 10),
                     CustomTextField(
                         hintText: localization.city,

@@ -4,9 +4,11 @@ import 'package:localbusiness/views/user/search_bar.dart';
 import 'near_you_section.dart';
 import 'package:localbusiness/widgets/reviews_list.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shimmer/shimmer.dart';
 
 class HomeContentPage extends StatefulWidget {
-  const HomeContentPage({super.key});
+  final TextEditingController searchController;
+  const HomeContentPage({super.key, required this.searchController});
 
   @override
   State<HomeContentPage> createState() => _HomeContentPageState();
@@ -39,7 +41,7 @@ class _HomeContentPageState extends State<HomeContentPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Search(),
+              Search(searchController: widget.searchController),
               const SizedBox(height: 16),
               const BusinessShortcuts(),
               const SizedBox(height: 16),
@@ -49,11 +51,13 @@ class _HomeContentPageState extends State<HomeContentPage> {
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              if (_isRefreshing)
-                const Center(
-                    child: CircularProgressIndicator()) // Optional loading
-              else
-                const ReviewsList(),
+              // Fixed height for ReviewsList
+              SizedBox(
+                height: 150, // Same height as the shimmer loader
+                child: _isRefreshing
+                    ? _buildShimmerLoader() // Use shimmer during refresh
+                    : const ReviewsList(),
+              ),
               const SizedBox(height: 16),
               Text(
                 localization.near_you,
@@ -61,15 +65,63 @@ class _HomeContentPageState extends State<HomeContentPage> {
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              if (_isRefreshing)
-                const Center(
-                  child: CircularProgressIndicator(),
-                )
-              else
-                const NearYouSection(),
+              // Fixed height for NearYouSection
+              SizedBox(
+                height: 200, // Same height as the shimmer loader
+                child: _isRefreshing
+                    ? _buildShimmerLoader() // Use shimmer during refresh
+                    : const NearYouSection(),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // Shimmer loader for refreshing
+  Widget _buildShimmerLoader() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: 5, // Number of shimmer placeholders
+        itemBuilder: (context, index) {
+          return Card(
+            margin: const EdgeInsets.all(8.0),
+            elevation: 3.0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            child: Container(
+              width: 150,
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 100,
+                    width: 150,
+                    color: Colors.grey[300], // Placeholder for image
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 16,
+                    width: 120,
+                    color: Colors.grey[300], // Placeholder for text
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 14,
+                    width: 80,
+                    color: Colors.grey[300], // Placeholder for text
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

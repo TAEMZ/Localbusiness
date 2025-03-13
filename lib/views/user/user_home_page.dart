@@ -6,9 +6,12 @@ import 'bookmarks_page.dart';
 import 'your_reviews_page.dart';
 import '../shared/drawer.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:convex_bottom_bar/convex_bottom_bar.dart'; // ✅ New package
+import '../auth/auth_modal.dart';
+import 'package:localbusiness/views/user/recommendation_page.dart'; // ✅ Import AuthModal
 
 class UserHomePage extends StatefulWidget {
-  final bool isGuest; // Indicates if the user is in guest mode
+  final bool isGuest;
 
   const UserHomePage({super.key, this.isGuest = false});
 
@@ -20,6 +23,7 @@ class _UserHomePageState extends State<UserHomePage> {
   int _currentIndex = 0;
   late Future<void> _refreshFuture;
   User? currentUser;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -39,29 +43,11 @@ class _UserHomePageState extends State<UserHomePage> {
     });
   }
 
+  // ✅ Show AuthModal instead of navigating to non-existing login page
   void _showAuthModal(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Authentication Required'),
-        content: const Text('Please log in or sign up to use this feature.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/login_user');
-            },
-            child: const Text('Login'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/signup_user');
-            },
-            child: const Text('Sign Up'),
-          ),
-        ],
-      ),
+      builder: (context) => const AuthModal(role: 'user'),
     );
   }
 
@@ -82,7 +68,7 @@ class _UserHomePageState extends State<UserHomePage> {
     final String role = widget.isGuest ? 'Guest' : 'User';
 
     final List<Widget> pages = [
-      const HomeContentPage(),
+      HomeContentPage(searchController: _searchController),
       const FavoritesPage(),
       const BookmarksPage(),
     ];
@@ -91,6 +77,26 @@ class _UserHomePageState extends State<UserHomePage> {
       appBar: AppBar(
         title: Text(localization.discover_businesses),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.recommend,
+                color: Color.fromARGB(255, 190, 245, 255)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RecommendationPage(
+                    searchController: _searchController, // Pass the controller
+                    onCardClicked: (String businessName) {
+                      // Update the search bar text and rebuild the UI
+                      setState(() {
+                        _searchController.text = businessName;
+                      });
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.rate_review),
             onPressed: () {
@@ -120,22 +126,19 @@ class _UserHomePageState extends State<UserHomePage> {
         onRefresh: _refreshData,
         child: pages[_currentIndex],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
+      // ✅ Stylish Bottom Navigation
+      bottomNavigationBar: ConvexAppBar(
+        backgroundColor:
+            const Color.fromARGB(255, 214, 190, 255), // Theme color
+        color: Colors.white, // Icon color
+        activeColor:
+            const Color.fromARGB(255, 226, 248, 253), // Selected icon color
+        initialActiveIndex: _currentIndex,
         onTap: _onItemTapped,
         items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home),
-            label: localization.home,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.favorite),
-            label: localization.favorites,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.bookmark),
-            label: localization.bookmarks,
-          ),
+          TabItem(icon: Icons.home, title: localization.home),
+          TabItem(icon: Icons.favorite, title: localization.favorites),
+          TabItem(icon: Icons.bookmark, title: localization.bookmarks),
         ],
       ),
     );

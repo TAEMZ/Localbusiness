@@ -85,13 +85,11 @@ class _NearDetailsPageState extends State<NearDetailsPage> {
   }
 
   Future<void> _getUserLocationName() async {
-    if (_businessPosition != null) {
-      String name = await LocationUtils.getLocationName(
-          _businessPosition.latitude, _businessPosition.longitude);
-      setState(() {
-        _locationText = name;
-      });
-    }
+    String name = await LocationUtils.getLocationName(
+        _businessPosition.latitude, _businessPosition.longitude);
+    setState(() {
+      _locationText = name;
+    });
   }
 
   @override

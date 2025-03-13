@@ -55,6 +55,8 @@ dependencies:
   cached_network_image: ^3.4.1
   auto_scroll: ^0.2.0
   scroll_to_index: ^3.0.1
+  flutter_dotenv: ^5.2.1
+  flutter_gemini: ^3.0.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -66,6 +68,7 @@ dependencies:
   icons_launcher: ^3.0.0
   firebase_messaging: ^15.2.4
   flutter_local_notifications: ^18.0.1
+  convex_bottom_bar: ^3.2.0
 
 dev_dependencies:
   flutter_test:

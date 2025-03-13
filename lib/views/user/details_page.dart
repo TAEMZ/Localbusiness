@@ -6,6 +6,7 @@ import 'package:localbusiness/widgets/reviews_dialog.dart';
 import 'package:localbusiness/views/user/call_action.dart';
 import 'package:localbusiness/views/user/email_action.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:localbusiness/views/auth/auth_modal.dart';
 
 class DetailsPage extends StatelessWidget {
   final String businessId;
@@ -14,8 +15,20 @@ class DetailsPage extends StatelessWidget {
   const DetailsPage(
       {super.key, required this.businessId, required this.creatorId});
 
-  Future<void> _flagBusiness(
-      BuildContext context, String businessId, String creatorId) async {
+  void _showAuthModal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => const AuthModal(role: 'user'),
+    );
+  }
+
+  Future<void> _flagBusiness(BuildContext context) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      _showAuthModal(context); // ✅ Ask guest users to log in
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -36,10 +49,6 @@ class DetailsPage extends StatelessWidget {
 
     if (confirmed == true) {
       try {
-        final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-        if (currentUserId == null) return;
-
-        // ✅ Flag the business in Firestore
         await FirebaseFirestore.instance
             .collection('businesses')
             .doc(businessId)
@@ -48,10 +57,9 @@ class DetailsPage extends StatelessWidget {
           'flaggedAt': FieldValue.serverTimestamp(),
         });
 
-        // ✅ Update the business owner's `totalFlagsReceived`
         await FirebaseFirestore.instance
             .collection('users')
-            .doc(creatorId) // ✅ Business owner's ID
+            .doc(creatorId)
             .update({
           'totalFlagsReceived': FieldValue.increment(1),
         });
@@ -70,6 +78,8 @@ class DetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localization = AppLocalizations.of(context)!;
+    final user = FirebaseAuth.instance.currentUser;
+    final bool isGuest = user == null;
 
     return Scaffold(
       appBar: AppBar(
@@ -237,50 +247,51 @@ class DetailsPage extends StatelessWidget {
                             icon: Icons.call,
                             label: 'Call',
                             color: Colors.green,
-                            onPressed: () {
-                              CallAction.launchCaller(phone);
-                            },
+                            onPressed: isGuest
+                                ? () => _showAuthModal(context) // 🚨 Blocked!
+                                : () => CallAction.launchCaller(phone),
                           ),
                           _buildActionButton(
                             icon: Icons.email,
                             label: 'Email',
                             color: Colors.blue,
-                            onPressed: () {
-                              EmailAction.launchEmail(
-                                toEmail: email,
-                                subject: 'Regarding $name',
-                                body: 'Hello, I would like to inquire about...',
-                              );
-                            },
+                            onPressed: isGuest
+                                ? () => _showAuthModal(context) // 🚨 Blocked!
+                                : () => EmailAction.launchEmail(
+                                      toEmail: email,
+                                      subject: 'Regarding $name',
+                                      body: 'Hello, I would like to inquire...',
+                                    ),
                           ),
                           _buildActionButton(
                             icon: Icons.share,
                             label: 'Share',
                             color: Colors.blueAccent,
-                            onPressed: () {
-                              Share.share(
-                                'Check out $name!\n\n$description\n\nPhone: $phone\nEmail: $email',
-                              );
-                            },
+                            onPressed: isGuest
+                                ? () => _showAuthModal(context) // 🚨 Blocked!
+                                : () => Share.share(
+                                      'Check out $name!\n\n$description\n\nPhone: $phone\nEmail: $email',
+                                    ),
                           ),
                           _buildActionButton(
                             icon: Icons.rate_review,
                             label: 'Review',
                             color: Colors.orange,
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) =>
-                                    ReviewPage(businessId: businessId),
-                              );
-                            },
+                            onPressed: isGuest
+                                ? () => _showAuthModal(context) // 🚨 Blocked!
+                                : () => showDialog(
+                                      context: context,
+                                      builder: (context) =>
+                                          ReviewPage(businessId: businessId),
+                                    ),
                           ),
                           _buildActionButton(
                             icon: Icons.flag,
-                            label: AppLocalizations.of(context)!.flag,
+                            label: localization.flag,
                             color: Colors.red,
-                            onPressed: () =>
-                                _flagBusiness(context, businessId, creatorId),
+                            onPressed: isGuest
+                                ? () => _showAuthModal(context) // 🚨 Blocked!
+                                : () => _flagBusiness(context),
                           ),
                         ],
                       ),
