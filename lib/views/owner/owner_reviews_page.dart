@@ -15,6 +15,7 @@ class OwnerReviewsPage extends StatefulWidget {
 class _OwnerReviewsPageState extends State<OwnerReviewsPage> {
   late Future<List<Map<String, dynamic>>> _reviewsFuture;
   String _filter = 'all';
+  String? _selectedCategory;
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -70,6 +71,8 @@ class _OwnerReviewsPageState extends State<OwnerReviewsPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Review flagged successfully!')),
         );
+
+        _refreshReviews(); // Refresh the list after flagging
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error flagging review: $e')),
@@ -87,6 +90,7 @@ class _OwnerReviewsPageState extends State<OwnerReviewsPage> {
           .collectionGroup('reviews')
           .where('reviewedId', isEqualTo: userId);
 
+      // Apply filters
       if (_filter == 'flagged') {
         query = query.where('flags', isGreaterThan: 0);
       } else if (_filter == '5_star') {
@@ -97,26 +101,37 @@ class _OwnerReviewsPageState extends State<OwnerReviewsPage> {
 
       List<Map<String, dynamic>> reviews = [];
       for (var reviewDoc in reviewsSnapshot.docs) {
-        final reviewData =
-            reviewDoc.data() as Map<String, dynamic>?; // Explicit cast
-        String businessName = 'Unknown Business';
+        final reviewData = reviewDoc.data() as Map<String, dynamic>?;
 
-        try {
-          final businessId = reviewData?['business_id']?.toString() ?? '';
-          final businessSnapshot = await FirebaseFirestore.instance
-              .collection('businesses')
-              .doc(businessId)
-              .get();
+        // Skip if the business no longer exists
+        final businessId = reviewData?['business_id']?.toString() ?? '';
+        final businessSnapshot = await FirebaseFirestore.instance
+            .collection('businesses')
+            .doc(businessId)
+            .get();
 
-          businessName = businessSnapshot.data()?['name'] ?? 'Unknown Business';
-        } catch (e) {
-          debugPrint('Error fetching business: $e');
+        if (!businessSnapshot.exists) {
+          // Delete the review if the business no longer exists
+          await reviewDoc.reference.delete();
+          continue;
+        }
+
+        final businessName =
+            businessSnapshot.data()?['name'] ?? 'Unknown Business';
+        final businessCategory =
+            businessSnapshot.data()?['category'] ?? 'Unknown Category';
+
+        // Apply category filter
+        if (_selectedCategory != null &&
+            businessCategory != _selectedCategory) {
+          continue; // Skip reviews that don't match the selected category
         }
 
         reviews.add({
           'reviewId': reviewDoc.id,
-          ...?reviewData, // Safe spread with null check
+          ...?reviewData,
           'businessName': businessName,
+          'businessCategory': businessCategory,
           'userId': reviewDoc.reference.parent.parent?.id,
         });
       }
@@ -131,6 +146,16 @@ class _OwnerReviewsPageState extends State<OwnerReviewsPage> {
   void _refreshReviews() {
     setState(() {
       _reviewsFuture = _fetchOwnerReviews();
+    });
+  }
+
+  void _removeReviewFromUI(String reviewId) {
+    setState(() {
+      _reviewsFuture = _reviewsFuture.then((reviews) {
+        return reviews
+            .where((review) => review['reviewId'] != reviewId)
+            .toList();
+      });
     });
   }
 
@@ -177,125 +202,190 @@ class _OwnerReviewsPageState extends State<OwnerReviewsPage> {
           ),
         ],
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _reviewsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                localization.error_business,
-                style: theme.textTheme.bodyLarge?.copyWith(color: Colors.red),
-              ),
-            );
-          }
-
-          final reviews = snapshot.data ?? [];
-          if (reviews.isEmpty) {
-            return Center(
-              child: Text(
-                localization.no_reviews,
-                style: theme.textTheme.bodyLarge,
-              ),
-            );
-          }
-
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: reviews.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final review = reviews[index];
-              final rating = review['rating']?.toDouble() ?? 0.0;
-              final flags = review['flags'] ?? 0;
-
-              return Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: DropdownButtonFormField<String>(
+              value: _selectedCategory,
+              decoration: InputDecoration(
+                labelText: 'Filter by Category',
+                border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Padding(
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: null,
+                  child: Text('All Categories'),
+                ),
+                DropdownMenuItem(
+                  value: 'Restaurants',
+                  child: Text('Restaurants'),
+                ),
+                DropdownMenuItem(
+                  value: 'Hairdresser',
+                  child: Text('Hairdresser'),
+                ),
+                DropdownMenuItem(
+                  value: 'Bars',
+                  child: Text('Bars'),
+                ),
+                DropdownMenuItem(
+                  value: 'Delivery',
+                  child: Text('Delivery'),
+                ),
+                DropdownMenuItem(
+                  value: 'Coffee',
+                  child: Text('Coffee'),
+                ),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedCategory = value;
+                  _refreshReviews();
+                });
+              },
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _reviewsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      localization.error_business,
+                      style: theme.textTheme.bodyLarge
+                          ?.copyWith(color: Colors.red),
+                    ),
+                  );
+                }
+
+                final reviews = snapshot.data ?? [];
+                if (reviews.isEmpty) {
+                  return Center(
+                    child: Text(
+                      localization.no_reviews,
+                      style: theme.textTheme.bodyLarge,
+                    ),
+                  );
+                }
+
+                return ListView.separated(
                   padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              review['businessName'] ??
-                                  localization.no_business,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                  itemCount: reviews.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final review = reviews[index];
+                    final rating = review['rating']?.toDouble() ?? 0.0;
+                    final flags = review['flags'] ?? 0;
+
+                    return Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    review['businessName'] ??
+                                        localization.no_business,
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                if (flags > 0)
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.flag,
+                                          color: Colors.red, size: 16),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '$flags',
+                                        style:
+                                            theme.textTheme.bodySmall?.copyWith(
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                              ],
                             ),
-                          ),
-                          if (flags > 0)
+                            const SizedBox(height: 12),
                             Row(
                               children: [
-                                const Icon(Icons.flag,
-                                    color: Colors.red, size: 16),
-                                const SizedBox(width: 4),
                                 Text(
-                                  '$flags',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: Colors.red,
+                                  '${localization.rating}: ',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey.shade600,
                                   ),
+                                ),
+                                _buildStarRating(rating),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              review['comment'] ?? localization.no_comment,
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '${AppLocalizations.of(context)!.reviewer}: ${review['name'] ?? localization.unknown}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.flag_outlined),
+                                      color: Colors.red,
+                                      iconSize: 20,
+                                      onPressed: () => _flagReview(
+                                        review['reviewId'],
+                                        review['userId'],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.close),
+                                      color: Colors.red,
+                                      iconSize: 20,
+                                      onPressed: () => _removeReviewFromUI(
+                                        review['reviewId'],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                        ],
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Text(
-                            '${localization.rating}: ',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                          _buildStarRating(rating),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        review['comment'] ?? localization.no_comment,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '${AppLocalizations.of(context)!.reviewer}: ${review['name'] ?? localization.unknown}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontStyle: FontStyle.italic,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.flag_outlined),
-                            color: Colors.red,
-                            iconSize: 20,
-                            onPressed: () => _flagReview(
-                              review['reviewId'],
-                              review['userId'],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

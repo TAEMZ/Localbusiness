@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '/consts.dart'; // API Key Import
-import 'search_bar.dart'; // Import the Search widget
+// Import the Search widget
 
 class RecommendationPage extends StatefulWidget {
   final Function(String)? onCardClicked;

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'filtered_business_page.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BusinessShortcuts extends StatelessWidget {
   const BusinessShortcuts({super.key});
