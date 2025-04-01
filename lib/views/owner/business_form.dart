@@ -11,6 +11,8 @@ import 'dart:io';
 import 'pick_location_page.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:localbusiness/views/owner/descriptoin_genarator.dart';
+import 'package:localbusiness/views/user/location_utils.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class BusinessForm extends StatefulWidget {
   final Function(Map<String, dynamic>)? onSubmit;
@@ -29,14 +31,25 @@ class _BusinessFormState extends State<BusinessForm> {
   final TextEditingController cityController = TextEditingController();
   final TextEditingController openingController = TextEditingController();
   final TextEditingController closingController = TextEditingController();
+  final TextEditingController customCategoryController =
+      TextEditingController();
+  final TextEditingController ownernameController = TextEditingController();
+  final TextEditingController operatingDaysController = TextEditingController();
+  final TextEditingController priceRangeController = TextEditingController();
 
-  String? selectedCategory; // Dropdown value
+  String? selectedCategory;
+  // Dropdown value
   final List<String> categories = [
-    'Restaurants',
+    'Restaurant',
     'Hairdresser',
-    'Bars',
+    'Bar',
     'Delivery',
-    'Coffee'
+    'Coffee',
+    'Shopping',
+    'Fitness',
+    'Health',
+    'Beauty',
+    'Entertainment'
   ];
 
   List<File> _pickedImages = []; // List to store multiple images
@@ -44,6 +57,8 @@ class _BusinessFormState extends State<BusinessForm> {
   LatLng? selectedLocation;
   bool _isLoading = false;
   String? userEmail;
+  String? _locationName;
+  bool _showCustomCategoryField = false; // Toggle custom category input
 
   @override
   void initState() {
@@ -66,13 +81,51 @@ class _BusinessFormState extends State<BusinessForm> {
       cityController.text = widget.business!['city'] ?? '';
       openingController.text = widget.business!['opening_hours'] ?? '';
       closingController.text = widget.business!['closing_hours'] ?? '';
-      selectedCategory = widget.business!['category'] ?? '';
+      ownernameController.text = widget.business!['owener_name'] ?? '';
+      operatingDaysController.text = widget.business!['operating_days'] ?? '';
+      priceRangeController.text = widget.business!['price_range'] ?? '';
+      final String businessCategory = widget.business!['category'] ?? '';
+      if (categories.contains(businessCategory)) {
+        selectedCategory = businessCategory;
+      } else {
+        _showCustomCategoryField = true;
+        customCategoryController.text = businessCategory;
+        selectedCategory =
+            null; // so the dropdown doesn't have an invalid value
+      }
       _uploadedImageUrls = List<String>.from(widget.business!['images'] ?? []);
 
       if (widget.business!['location'] != null) {
         final loc = widget.business!['location'];
         selectedLocation = LatLng(loc['latitude'], loc['longitude']);
       }
+    }
+  }
+
+  String getLocalizedCategory(String category, AppLocalizations localization) {
+    switch (category) {
+      case 'Restaurant':
+        return localization.restaurant; // "ምግብ ቤት"
+      case 'Hairdresser':
+        return localization.hairdresser; // "ፀጉር አስተካካይ"
+      case 'Bar':
+        return localization.bar; // "መጠጥ ቤት"
+      case 'Delivery':
+        return localization.delivery; // "ትራንስፖርት"
+      case 'Coffee':
+        return localization.coffee; // "ቡና ቤት"
+      case 'Shopping':
+        return localization.shopping;
+      case 'Fitness':
+        return localization.fitness;
+      case 'Health':
+        return localization.health;
+      case 'Beauty':
+        return localization.beauty;
+      case 'Entertainment':
+        return localization.entertainment;
+      default:
+        return category;
     }
   }
 
@@ -138,6 +191,26 @@ class _BusinessFormState extends State<BusinessForm> {
       setState(() {
         selectedLocation = result;
       });
+
+      // Fetch the location name
+      try {
+        _locationName = await LocationUtils.getLocationName(
+          selectedLocation!.latitude,
+          selectedLocation!.longitude,
+        );
+      } catch (e) {
+        _locationName =
+            'Unknown Location'; // Fallback if location name cannot be fetched
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to fetch location name: $e')),
+        );
+      }
+
+      // Update the UI
+      setState(() {
+        _locationName =
+            _locationName; // Trigger a rebuild to display the location name
+      });
     }
   }
 
@@ -151,6 +224,8 @@ class _BusinessFormState extends State<BusinessForm> {
 
       businessData['creatorId'] = user.uid;
       businessData['creatorEmail'] = user.email;
+      // In your BusinessForm or wherever you save data
+      businessData['name_lowercase'] = businessData['name'].toLowerCase();
 
       if (_uploadedImageUrls.isNotEmpty) {
         businessData['images'] = _uploadedImageUrls;
@@ -232,12 +307,21 @@ class _BusinessFormState extends State<BusinessForm> {
   }
 
   void _validateAndSubmit() async {
+    // If the user selected "Other (Write your own)", use the custom category
+    if (_showCustomCategoryField && customCategoryController.text.isNotEmpty) {
+      selectedCategory = customCategoryController.text.trim();
+    }
+
+    // Validate all fields
     if (nameController.text.trim().isEmpty ||
         descriptionController.text.trim().isEmpty ||
         phoneController.text.trim().isEmpty ||
         cityController.text.trim().isEmpty ||
         openingController.text.trim().isEmpty ||
         closingController.text.trim().isEmpty ||
+        ownernameController.text.trim().isEmpty ||
+        priceRangeController.text.trim().isEmpty ||
+        operatingDaysController.text.trim().isEmpty ||
         selectedCategory == null ||
         selectedCategory!.isEmpty ||
         (_pickedImages.isEmpty && _uploadedImageUrls.isEmpty) ||
@@ -251,27 +335,36 @@ class _BusinessFormState extends State<BusinessForm> {
       return;
     }
 
+    // Upload images if any
     if (_pickedImages.isNotEmpty) {
       await uploadImagesToCloudinary();
     }
 
+    // Prepare business data
     final businessData = {
       'name': nameController.text.trim(),
       'description': descriptionController.text.trim(),
       'phone': phoneController.text.trim(),
       'city': cityController.text.trim(),
-      'category': selectedCategory ?? '',
+      'category': selectedCategory ?? '', // Use the selected or custom category
       'images': _uploadedImageUrls, // Store multiple image URLs
       'opening_hours': openingController.text.trim(),
       'closing_hours': closingController.text.trim(),
+      'owner_name': ownernameController.text.trim(),
+      'operating_days': operatingDaysController.text.trim(),
+      'price_range': priceRangeController.text.trim(),
       'created_at': DateTime.now(),
     };
 
+    // Save to Firestore
     await saveBusinessToFirestore(businessData);
 
+    // Call the onSubmit callback if provided
     if (widget.onSubmit != null) {
       widget.onSubmit!(businessData);
     }
+
+    // Navigate back
     Navigator.pop(context);
   }
 
@@ -285,7 +378,12 @@ class _BusinessFormState extends State<BusinessForm> {
             : 'Edit Business'),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: SpinKitWave(
+              color:
+                  Colors.black, // Or use Theme.of(context).colorScheme.primary
+              size: 50.0,
+            ))
           : Padding(
               padding: const EdgeInsets.all(16.0),
               child: SingleChildScrollView(
@@ -318,33 +416,29 @@ class _BusinessFormState extends State<BusinessForm> {
                         hintText: localization.city,
                         controller: cityController),
                     const SizedBox(height: 10),
-                    // DropdownButtonFormField<String>(
-                    //   value: selectedCategory,
-                    //   decoration:
-                    //       InputDecoration(labelText: localization.catagory),
-                    //   items: categories
-                    //       .map((category) => DropdownMenuItem(
-                    //             value: category,
-                    //             child: Text(category),
-                    //           ))
-                    //       .toList(),
-                    //   onChanged: (value) {
-                    //     setState(() {
-                    //       selectedCategory = value;
-                    //     });
-                    //   },
-                    // ),
-                    _buildDropdown(
-                      localization
-                          .catagory, // label (e.g., "Category" from localization)
-                      categories, // list of categories directly
-                      (value) {
-                        // onChanged function to update the selected value
-                        setState(() {
-                          selectedCategory = value;
-                        });
-                      },
+                    const SizedBox(height: 10),
+                    // New field: Business Email
+                    CustomTextField(
+                      hintText: localization.owners_name,
+                      controller: ownernameController,
                     ),
+                    const SizedBox(height: 10),
+                    // New field: Operating Days
+                    CustomTextField(
+                      hintText: localization.operating_days,
+                      controller: operatingDaysController,
+                    ),
+                    const SizedBox(height: 10),
+                    // New field: Price Range
+                    CustomTextField(
+                      hintText: localization.prince_range,
+                      controller: priceRangeController,
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    _buildCategoryDropdown(
+                        localization.catagory), // Only call once
                     const SizedBox(height: 10),
                     IconButton(
                       onPressed: pickImages,
@@ -415,11 +509,12 @@ class _BusinessFormState extends State<BusinessForm> {
                       child: Text(localization.pick_location),
                     ),
                     if (selectedLocation != null)
-                      Text(
-                        'Selected Location: Lat: ${selectedLocation!.latitude}, Lng: ${selectedLocation!.longitude}',
-                        style:
-                            const TextStyle(fontSize: 14, color: Colors.green),
-                      ),
+                      if (selectedLocation != null)
+                        Text(
+                          'Selected Location: ${_locationName ?? "Fetching location name..."}',
+                          style: const TextStyle(
+                              fontSize: 14, color: Colors.green),
+                        ),
                     const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: _validateAndSubmit,
@@ -434,24 +529,47 @@ class _BusinessFormState extends State<BusinessForm> {
     );
   }
 
-  Widget _buildDropdown(
-      String label, List<String> items, ValueChanged? onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: DropdownButtonFormField(
-        items: items
-            .map((item) => DropdownMenuItem(
-                  value: item,
-                  child: Text(item),
-                ))
-            .toList(),
-        onChanged: onChanged,
-        validator: (value) => value == null ? 'Please select a $label' : null,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
+  Widget _buildCategoryDropdown(String label) {
+    final localization = AppLocalizations.of(context)!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<String>(
+          value: _showCustomCategoryField ? null : selectedCategory,
+          decoration: InputDecoration(
+            labelText: label,
+            border: const OutlineInputBorder(),
+          ),
+          items: [
+            ...categories.map((category) => DropdownMenuItem(
+                value: category,
+                child: Text(getLocalizedCategory(category, localization)))),
+            const DropdownMenuItem(
+              value: 'other',
+              child: Text('Other (Write your own)'),
+            ),
+          ],
+          onChanged: (value) {
+            setState(() {
+              if (value == 'other') {
+                _showCustomCategoryField = true;
+                selectedCategory = null; // Reset selectedCategory
+              } else {
+                _showCustomCategoryField = false;
+                selectedCategory = value;
+              }
+            });
+          },
         ),
-      ),
+        if (_showCustomCategoryField)
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: CustomTextField(
+              hintText: 'Enter your own category',
+              controller: customCategoryController,
+            ),
+          ),
+      ],
     );
   }
 }

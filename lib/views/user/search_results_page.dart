@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'user_business_card.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class SearchResultsPage extends StatefulWidget {
   final String query;
@@ -26,8 +27,9 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
     try {
       final querySnapshot = await FirebaseFirestore.instance
           .collection('businesses')
-          .where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThanOrEqualTo: '$query\uf8ff')
+          .where('name_lowercase', isGreaterThanOrEqualTo: query.toLowerCase())
+          .where('name_lowercase',
+              isLessThanOrEqualTo: '${query.toLowerCase()}\uf8ff')
           .get();
 
       final results = querySnapshot.docs.map((doc) {
@@ -63,7 +65,12 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
         title: Text('Search Results for "${widget.query}"'),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: SpinKitWave(
+              color:
+                  Colors.black, // Or use Theme.of(context).colorScheme.primary
+              size: 50.0,
+            ))
           : _searchResults.isEmpty
               ? Center(child: Text(localization.no_business))
               : ListView.builder(

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:localbusiness/widgets/reviews_dialog.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Import your ReviewPage
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart'; // Import your ReviewPage
 
 class MyReviews extends StatefulWidget {
   const MyReviews({super.key});
@@ -99,7 +100,12 @@ class _MyReviewsState extends State<MyReviews> {
         future: _fetchUserReviews(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: SpinKitWave(
+              color:
+                  Colors.black, // Or use Theme.of(context).colorScheme.primary
+              size: 50.0,
+            ));
           }
           if (snapshot.hasError ||
               snapshot.data == null ||

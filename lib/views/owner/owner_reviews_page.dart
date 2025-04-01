@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class OwnerReviewsPage extends StatefulWidget {
   final String creatorId;
@@ -18,6 +19,20 @@ class _OwnerReviewsPageState extends State<OwnerReviewsPage> {
   String? _selectedCategory;
 
   final TextEditingController _searchController = TextEditingController();
+
+  // Predefined categories
+  final List<String> _predefinedCategories = [
+    'restaurant',
+    'hairdresser',
+    'bar',
+    'delivery',
+    'coffee',
+    'shopping',
+    'fitness',
+    'health',
+    'beauty',
+    'entertainment',
+  ];
 
   @override
   void initState() {
@@ -93,6 +108,7 @@ class _OwnerReviewsPageState extends State<OwnerReviewsPage> {
       // Apply filters
       if (_filter == 'flagged') {
         query = query.where('flags', isGreaterThan: 0);
+        debugPrint('Filter: $_filter');
       } else if (_filter == '5_star') {
         query = query.where('rating', isEqualTo: 5);
       }
@@ -122,9 +138,15 @@ class _OwnerReviewsPageState extends State<OwnerReviewsPage> {
             businessSnapshot.data()?['category'] ?? 'Unknown Category';
 
         // Apply category filter
-        if (_selectedCategory != null &&
-            businessCategory != _selectedCategory) {
-          continue; // Skip reviews that don't match the selected category
+        if (_selectedCategory != null) {
+          if (_selectedCategory == 'Other') {
+            // Show reviews with custom categories (not in predefined list)
+            if (_predefinedCategories.contains(businessCategory)) {
+              continue; // Skip predefined categories
+            }
+          } else if (businessCategory != _selectedCategory) {
+            continue; // Skip reviews that don't match the selected category
+          }
         }
 
         reviews.add({
@@ -214,30 +236,20 @@ class _OwnerReviewsPageState extends State<OwnerReviewsPage> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              items: const [
-                DropdownMenuItem(
+              items: [
+                const DropdownMenuItem(
                   value: null,
                   child: Text('All Categories'),
                 ),
-                DropdownMenuItem(
-                  value: 'Restaurants',
-                  child: Text('Restaurants'),
-                ),
-                DropdownMenuItem(
-                  value: 'Hairdresser',
-                  child: Text('Hairdresser'),
-                ),
-                DropdownMenuItem(
-                  value: 'Bars',
-                  child: Text('Bars'),
-                ),
-                DropdownMenuItem(
-                  value: 'Delivery',
-                  child: Text('Delivery'),
-                ),
-                DropdownMenuItem(
-                  value: 'Coffee',
-                  child: Text('Coffee'),
+                ..._predefinedCategories.map((category) {
+                  return DropdownMenuItem(
+                    value: category,
+                    child: Text(category),
+                  );
+                }).toList(),
+                const DropdownMenuItem(
+                  value: 'Other',
+                  child: Text('Other'),
                 ),
               ],
               onChanged: (value) {
@@ -253,7 +265,12 @@ class _OwnerReviewsPageState extends State<OwnerReviewsPage> {
               future: _reviewsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                      child: SpinKitWave(
+                    color: Colors
+                        .black, // Or use Theme.of(context).colorScheme.primary
+                    size: 50.0,
+                  ));
                 }
 
                 if (snapshot.hasError) {

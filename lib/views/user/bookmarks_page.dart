@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'user_business_card.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class BookmarksPage extends StatefulWidget {
   const BookmarksPage({super.key});
@@ -52,12 +53,18 @@ class _BookmarksPageState extends State<BookmarksPage> {
       appBar: AppBar(
         title: Text(localization.bookmarks),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _fetchBookmarks(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: SpinKitWave(
+              color:
+                  Colors.black, // Or use Theme.of(context).colorScheme.primary
+              size: 50.0,
+            ));
           }
           if (snapshot.hasError ||
               snapshot.data == null ||

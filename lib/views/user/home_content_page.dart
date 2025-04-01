@@ -8,7 +8,9 @@ import 'package:shimmer/shimmer.dart';
 
 class HomeContentPage extends StatefulWidget {
   final TextEditingController searchController;
-  const HomeContentPage({super.key, required this.searchController});
+  final String businessId;
+  const HomeContentPage(
+      {super.key, required this.searchController, required this.businessId});
 
   @override
   State<HomeContentPage> createState() => _HomeContentPageState();
@@ -70,7 +72,9 @@ class _HomeContentPageState extends State<HomeContentPage> {
                 height: 200, // Same height as the shimmer loader
                 child: _isRefreshing
                     ? _buildShimmerLoader() // Use shimmer during refresh
-                    : const NearYouSection(),
+                    : NearYouSection(
+                        businessId: '',
+                      ),
               ),
             ],
           ),

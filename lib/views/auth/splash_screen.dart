@@ -45,7 +45,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: Lottie.asset(
                   'assets/animations/splash_animation.json', // Your Lottie JSON file
                   fit: BoxFit.cover,
-                  width: 50,
+                  width: 5,
                   height: 760, // Fill the entire screen
                 ),
               ),
@@ -117,7 +117,7 @@ class _AnimatedDottedProgressIndicatorState
                   height: 10,
                   margin: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 254, 171, 255),
+                    color: const Color.fromARGB(255, 237, 97, 58),
                     shape: BoxShape.circle,
                   ),
                 ),

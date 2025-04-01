@@ -10,6 +10,7 @@ class CustomTextField extends StatelessWidget {
   final InputDecoration? decoration;
   final TextStyle? textStyle;
   final bool isEmailField;
+  final VoidCallback? onTap; // Add onTap parameter
 
   const CustomTextField({
     super.key,
@@ -22,37 +23,38 @@ class CustomTextField extends StatelessWidget {
     this.decoration,
     this.textStyle,
     this.isEmailField = false,
+    this.onTap, // Add onTap parameter
   });
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-      style: textStyle ?? const TextStyle(color: Colors.white),
       controller: controller,
       decoration: decoration ?? _defaultDecoration(context),
       validator: validator ?? _defaultValidator,
       keyboardType: keyboardType ??
           (isEmailField ? TextInputType.emailAddress : TextInputType.text),
       obscureText: isObscureText,
+      onTap: onTap, // Pass onTap to TextFormField
     );
   }
 
   InputDecoration _defaultDecoration(BuildContext context) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: const TextStyle(color: Colors.grey),
+      hintStyle: const TextStyle(color: Color.fromARGB(255, 80, 79, 79)),
       suffixIcon: suffixIcon,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey[300]!),
+        borderSide: BorderSide(color: const Color.fromARGB(255, 0, 0, 0)!),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(
-            color: Color.fromARGB(255, 236, 213, 255), width: 2),
+        borderSide:
+            const BorderSide(color: Color.fromARGB(255, 60, 24, 204), width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),

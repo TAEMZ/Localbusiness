@@ -7,7 +7,8 @@ import 'package:localbusiness/views/user/near_details_page.dart';
 import 'dart:async'; // For Timer
 
 class NearYouSection extends StatefulWidget {
-  const NearYouSection({super.key});
+  final String businessId;
+  const NearYouSection({super.key, required this.businessId});
 
   @override
   State<NearYouSection> createState() => _NearYouSectionState();
@@ -288,8 +289,13 @@ class _NearYouSectionState extends State<NearYouSection> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            NearDetailsPage(businessData: business),
+                        builder: (context) => NearDetailsPage(
+                          businessData: business,
+                          businessId: business[
+                              'id'], // Use the business ID from the current item
+                          creatorId: business['creatorId'] ??
+                              '', // Add creatorId if needed
+                        ),
                       ),
                     );
                   },

@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class PickLocationPage extends StatefulWidget {
   final LatLng? initialLocation;
@@ -136,15 +137,19 @@ class _PickLocationPageState extends State<PickLocationPage> {
         title: Text(localization.pick_location),
       ),
       body: _selectedLocation == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: SpinKitWave(
+              color:
+                  Colors.black, // Or use Theme.of(context).colorScheme.primary
+              size: 50.0,
+            ))
           : GoogleMap(
               onMapCreated: _onMapCreated,
               initialCameraPosition: const CameraPosition(
                 target: LatLng(7.8514, 38.1856), // Worabe location
                 zoom: 15,
               ),
-              minMaxZoomPreference:
-                  const MinMaxZoomPreference(12, 17), // Limit zoom
+              // Limit zoom
               markers: _markers,
               onTap: (LatLng location) {
                 _checkPermissions(Permission.location, context);
@@ -154,12 +159,6 @@ class _PickLocationPageState extends State<PickLocationPage> {
                 });
                 _updateAddress(location);
               },
-              cameraTargetBounds: CameraTargetBounds(
-                LatLngBounds(
-                  southwest: const LatLng(7.8414, 38.1756), // Adjust SW bounds
-                  northeast: const LatLng(7.8614, 38.1956), // Adjust NE bounds
-                ),
-              ),
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

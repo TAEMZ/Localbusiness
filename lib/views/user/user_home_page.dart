@@ -12,8 +12,10 @@ import 'package:localbusiness/views/user/recommendation_page.dart'; // ✅ Impor
 
 class UserHomePage extends StatefulWidget {
   final bool isGuest;
+  final String businessId;
 
-  const UserHomePage({super.key, this.isGuest = false});
+  const UserHomePage(
+      {super.key, this.isGuest = false, required this.businessId});
 
   @override
   _UserHomePageState createState() => _UserHomePageState();
@@ -52,10 +54,17 @@ class _UserHomePageState extends State<UserHomePage> {
   }
 
   void _onItemTapped(int index) {
-    if (widget.isGuest && index != 0) {
+    // Debugging: Print the index and guest status
+    debugPrint('Tapped index: $index, isGuest: ${widget.isGuest}');
+
+    // If the user is a guest and tries to access Favorites or Bookmarks, show the auth modal
+    if (widget.isGuest && (index == 1 || index == 2)) {
+      debugPrint('Showing auth modal for guest user');
       _showAuthModal(context);
-      return;
+      return; // Prevent changing the index
     }
+
+    // Otherwise, update the index
     setState(() {
       _currentIndex = index;
     });
@@ -68,7 +77,10 @@ class _UserHomePageState extends State<UserHomePage> {
     final String role = widget.isGuest ? 'Guest' : 'User';
 
     final List<Widget> pages = [
-      HomeContentPage(searchController: _searchController),
+      HomeContentPage(
+        searchController: _searchController,
+        businessId: '',
+      ),
       const FavoritesPage(),
       const BookmarksPage(),
     ];
@@ -78,8 +90,8 @@ class _UserHomePageState extends State<UserHomePage> {
         title: Text(localization.discover_businesses),
         actions: [
           IconButton(
-            icon: const Icon(Icons.recommend,
-                color: Color.fromARGB(255, 190, 245, 255)),
+            icon: const Icon(Icons.auto_awesome,
+                color: Color.fromARGB(255, 141, 133, 133)),
             onPressed: () {
               Navigator.push(
                 context,
@@ -127,19 +139,24 @@ class _UserHomePageState extends State<UserHomePage> {
         child: pages[_currentIndex],
       ),
       // ✅ Stylish Bottom Navigation
-      bottomNavigationBar: ConvexAppBar(
-        backgroundColor:
-            const Color.fromARGB(255, 214, 190, 255), // Theme color
-        color: Colors.white, // Icon color
-        activeColor:
-            const Color.fromARGB(255, 226, 248, 253), // Selected icon color
-        initialActiveIndex: _currentIndex,
-        onTap: _onItemTapped,
-        items: [
-          TabItem(icon: Icons.home, title: localization.home),
-          TabItem(icon: Icons.favorite, title: localization.favorites),
-          TabItem(icon: Icons.bookmark, title: localization.bookmarks),
-        ],
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.only(bottom: 5), // Add padding here
+        child: ConvexAppBar(
+          backgroundColor: Colors.white, // Background color of the bar
+          color: Colors.grey[600], // Color of inactive icons
+          activeColor: Colors.deepPurple, // Color of the active icon
+          initialActiveIndex: _currentIndex,
+          onTap: _onItemTapped, // Ensure this is correctly set
+          items: [
+            TabItem(icon: Icons.home, title: localization.home),
+            TabItem(icon: Icons.reviews, title: localization.favorites),
+            TabItem(icon: Icons.analytics, title: localization.bookmarks),
+          ],
+          // Use a circular style for the active tab
+          curveSize: 100, // Adjust the curve size of the active tab
+          top: -20, // Move the bar slightly upwards
+          height: 65, // Adjust the height of the bar
+        ),
       ),
     );
   }

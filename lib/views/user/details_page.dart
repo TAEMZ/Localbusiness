@@ -7,6 +7,8 @@ import 'package:localbusiness/views/user/call_action.dart';
 import 'package:localbusiness/views/user/email_action.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:localbusiness/views/auth/auth_modal.dart';
+import 'package:localbusiness/views/user/sharing_service.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class DetailsPage extends StatelessWidget {
   final String businessId;
@@ -95,7 +97,12 @@ class DetailsPage extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: SpinKitWave(
+              color:
+                  Colors.black, // Or use Theme.of(context).colorScheme.primary
+              size: 50.0,
+            ));
           }
 
           if (!snapshot.hasData || !snapshot.data!.exists) {
@@ -103,6 +110,8 @@ class DetailsPage extends StatelessWidget {
           }
 
           final businessData = snapshot.data!.data() as Map<String, dynamic>;
+          final List<String> imageUrls =
+              (businessData['image'] as List<dynamic>?)?.cast<String>() ?? [];
 
           final String name = businessData['name'] ?? 'No Name';
           final String description =
@@ -112,6 +121,10 @@ class DetailsPage extends StatelessWidget {
           final String phone = businessData['phone'] ?? 'N/A';
           final String email = businessData['email'] ?? 'N/A';
           final String category = businessData['category'] ?? 'No Category';
+          final String ownerName =
+              businessData['owner_name'] ?? 'No Owner Name';
+          final String priceRange = businessData['price_range'] ?? 'N/A';
+          final String operatingDays = businessData['operating_days'] ?? 'N/A';
           final String imageUrl = businessData['image'] ??
               'https://via.placeholder.com/150'; // Placeholder image
 
@@ -170,7 +183,7 @@ class DetailsPage extends StatelessWidget {
                 // Divider
                 const Divider(thickness: 1, height: 1),
 
-                // Description Section
+                // Description Section (Scrollable)
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -185,11 +198,16 @@ class DetailsPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Text(
-                        description,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black87,
+                      SizedBox(
+                        height: 150, // Fixed height for scrollable description
+                        child: SingleChildScrollView(
+                          child: Text(
+                            description,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              // White text color
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -214,10 +232,12 @@ class DetailsPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 10),
+                      _buildDetailCard('Owner Name', ownerName),
+                      _buildDetailCard('Price Range', priceRange),
+                      _buildDetailCard('Operating Days', operatingDays),
                       _buildDetailCard('Opening Hours', openingHours),
                       _buildDetailCard('Closing Hours', closingHours),
                       _buildDetailCard('Phone', phone),
-                      _buildDetailCard('Email', email),
                     ],
                   ),
                 ),
@@ -263,14 +283,20 @@ class DetailsPage extends StatelessWidget {
                                       body: 'Hello, I would like to inquire...',
                                     ),
                           ),
+                          // In the DetailsPage widget, update the share button action:
+                          // In your DetailsPage widget's action button:
                           _buildActionButton(
                             icon: Icons.share,
                             label: 'Share',
                             color: Colors.blueAccent,
                             onPressed: isGuest
-                                ? () => _showAuthModal(context) // 🚨 Blocked!
-                                : () => Share.share(
-                                      'Check out $name!\n\n$description\n\nPhone: $phone\nEmail: $email',
+                                ? () => _showAuthModal(context)
+                                : () => ShareService.shareBusiness(
+                                      name: name,
+                                      description: description,
+                                      phone: phone,
+                                      category: category,
+                                      context: context,
                                     ),
                           ),
                           _buildActionButton(
@@ -322,10 +348,11 @@ class DetailsPage extends StatelessWidget {
             color: Colors.blueAccent,
           ),
         ),
-        subtitle: Text(
-          value,
-          style: const TextStyle(fontSize: 16),
-        ),
+        subtitle: Text(value,
+            style: const TextStyle(
+              fontSize: 16,
+            ) // White text
+            ),
       ),
     );
   }

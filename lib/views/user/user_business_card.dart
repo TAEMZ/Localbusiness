@@ -5,6 +5,7 @@ import 'package:localbusiness/views/user/details_page.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:localbusiness/widgets/locale_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class UserBusinessCard extends StatefulWidget {
   final Map<String, dynamic> businessData;
@@ -83,7 +84,12 @@ class _UserBusinessCardState extends State<UserBusinessCard> {
               Align(
                 alignment: Alignment.topRight,
                 child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red),
+                  icon: const FaIcon(
+                    FontAwesomeIcons.timesCircle,
+                    color: Color.fromARGB(
+                        255, 182, 183, 184), // Change the color to red
+                    size: 24, // Adjust the size as needed
+                  ),
                   onPressed: () {
                     if (widget.onRemove != null) {
                       widget.onRemove!();
@@ -146,7 +152,9 @@ class _UserBusinessCardState extends State<UserBusinessCard> {
                       IconButton(
                         icon: Icon(
                           isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color: isFavorite ? Colors.red : null,
+                          color: isFavorite
+                              ? const Color.fromARGB(255, 255, 47, 32)
+                              : null,
                         ),
                         onPressed: () {
                           setState(() {
@@ -158,7 +166,9 @@ class _UserBusinessCardState extends State<UserBusinessCard> {
                       IconButton(
                         icon: Icon(
                           isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                          color: isBookmarked ? Colors.blue : null,
+                          color: isBookmarked
+                              ? const Color.fromARGB(255, 126, 145, 255)
+                              : null,
                         ),
                         onPressed: () {
                           setState(() {
@@ -242,7 +252,7 @@ class _ImageCarouselState extends State<_ImageCarousel> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _currentPage == index
-                        ? Colors.blue
+                        ? const Color.fromARGB(255, 206, 150, 255)
                         : Colors.grey.withOpacity(0.5),
                   ),
                 ),

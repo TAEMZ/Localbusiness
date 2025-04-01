@@ -1,20 +1,77 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'auth_modal.dart';
 import '../user/user_home_page.dart';
 
-class WelcomePage extends StatelessWidget {
+class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
+
+  @override
+  State<WelcomePage> createState() => _WelcomePageState();
+}
+
+class _WelcomePageState extends State<WelcomePage>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the animation controller
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat(); // Loop the animation infinitely
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _navigateWithoutStoppingAnimation(BuildContext context, Widget page) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => page,
+        maintainState: true, // This keeps the previous route alive
+        fullscreenDialog: true, // Optional: makes the modal appear from bottom
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image
+          // Lottie Animation Background
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/background.jpg', // Path to your background image
-              fit: BoxFit.cover, // Cover the entire screen
+            child: Lottie.asset(
+              'assets/animations/mapanimation.json',
+              fit: BoxFit.cover,
+              alignment:
+                  const Alignment(-0.2, 0), // Adjusted alignment to move left
+              controller: _animationController, // Attach the controller
+              onLoaded: (composition) {
+                // Play the animation when loaded
+                _animationController
+                  ..duration = composition.duration
+                  ..forward();
+              },
+              errorBuilder: (context, error, stackTrace) {
+                debugPrint('Error loading Lottie animation: $error');
+                return const Center(
+                  child: Text(
+                    'Failed to load animation',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
 
@@ -31,19 +88,19 @@ class WelcomePage extends StatelessWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const SizedBox(height: 150),
+                            const SizedBox(height: 200),
                             const Text(
                               '"Get connected discover yourselves"',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Color.fromARGB(255, 236, 230, 230),
+                                color: Color.fromARGB(255, 255, 241, 241),
                                 fontFamily: 'Roboto',
                                 shadows: [
                                   Shadow(
                                     blurRadius: 10.0,
-                                    color: Color.fromARGB(255, 255, 223, 223),
+                                    color: Color.fromARGB(255, 92, 86, 86),
                                     offset: Offset(2.0, 2.0),
                                   ),
                                 ],
@@ -57,16 +114,13 @@ class WelcomePage extends StatelessWidget {
                               icon: Icons.business,
                               label: 'Manage your Business',
                               onPressed: () {
-                                Navigator.push(
+                                _navigateWithoutStoppingAnimation(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const AuthModal(role: 'owner'),
-                                  ),
+                                  const AuthModal(role: 'owner'),
                                 );
                               },
                             ),
-                            const SizedBox(height: 30),
+                            const SizedBox(height: 20),
 
                             // Continue as Regular User
                             _buildButton(
@@ -74,12 +128,9 @@ class WelcomePage extends StatelessWidget {
                               icon: Icons.search,
                               label: 'Discover Businesses',
                               onPressed: () {
-                                Navigator.push(
+                                _navigateWithoutStoppingAnimation(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const AuthModal(role: 'user'),
-                                  ),
+                                  const AuthModal(role: 'user'),
                                 );
                               },
                             ),
@@ -88,25 +139,25 @@ class WelcomePage extends StatelessWidget {
                             // Continue as Guest
                             TextButton(
                               onPressed: () {
-                                Navigator.pushReplacement(
+                                _navigateWithoutStoppingAnimation(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const UserHomePage(isGuest: true),
+                                  const UserHomePage(
+                                    isGuest: true,
+                                    businessId: '',
                                   ),
                                 );
                               },
                               child: const Text(
                                 'Continue as Guest',
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 17,
                                   fontWeight: FontWeight.bold,
-                                  color: Color.fromARGB(255, 230, 218, 218),
+                                  color: Color.fromARGB(255, 171, 148, 192),
                                   fontFamily: 'Pacifico',
                                   shadows: [
                                     Shadow(
-                                      blurRadius: 5.0,
-                                      color: Color.fromARGB(255, 193, 190, 255),
+                                      blurRadius: 10.0,
+                                      color: Color.fromARGB(255, 88, 92, 93),
                                       offset: Offset(2.0, 2.0),
                                     ),
                                   ],
@@ -137,17 +188,18 @@ class WelcomePage extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color.fromARGB(255, 3, 3, 3).withOpacity(0.3),
-          foregroundColor: const Color.fromARGB(255, 224, 212, 212),
+          backgroundColor:
+              const Color.fromARGB(255, 178, 224, 255).withOpacity(0.3),
+          foregroundColor: const Color.fromARGB(255, 0, 0, 0),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
             side: const BorderSide(
-                color: Color.fromARGB(255, 201, 193, 193), width: 2),
+                color: Color.fromARGB(255, 224, 226, 255), width: 2),
           ),
-          elevation: 10,
+          elevation: 30,
           shadowColor:
-              const Color.fromARGB(255, 229, 244, 255).withOpacity(0.5),
+              const Color.fromARGB(255, 229, 248, 255).withOpacity(0.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -163,7 +215,7 @@ class WelcomePage extends StatelessWidget {
                 shadows: [
                   Shadow(
                     blurRadius: 5.0,
-                    color: Color.fromARGB(255, 33, 32, 32),
+                    color: Color.fromARGB(255, 255, 241, 241),
                     offset: Offset(2.0, 2.0),
                   ),
                 ],

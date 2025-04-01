@@ -66,14 +66,28 @@
   "coffee": "ቡና ቤት",
   "hairdresser": "ፀጉር አስተካካይ",
   "bar": "መጠጥ ቤት",
-  "flag_business": "Flag Busiess",
-  "flag_business_confirmation": "Are you sure you want to flag this business?",
-  "business_flagged": "Business flagged for review",
-  "flag": "Flag",
-  "cancel": "Cancel",
-   "flag_review": "Flag Review",
-  "flag_review_confirmation": "Are you sure you want to flag this review?",
-  "all": "All",
-  "flagged": "Flagged",
-  "five_star": "5 Star Ratings"
-}
+ "flag_business": "ቢዝነስ ምልክት አስገባ",
+  "flag_business_confirmation": "እርግጠኛ ነዎት ይህን ቢዝነስ ምልክት አስገባ ይፈልጋሉ?",
+  "business_flagged": "ቢዝነስ ለእይታ ተምረውታል",
+  "flag": "ምልክት አስገባ",
+  "cancel": "አቋርጥ",
+  "flag_review": "አስተያየት ምልክት አስገባ",
+  "flag_review_confirmation": "እርግጠኛ ነዎት ይህን አስተያየት ምልክት አስገባ ይፈልጋሉ?",
+  "all": "ሁሉም",
+  "flagged": "ምልክት ተሰጥቷል",
+  "five_star": "5 ኮከት ግምገማ",
+  "add_business": "ቢዝነስ ይጨምሩ",
+  "shopping": "ገበያ",
+  "entertainment": "መዝናኛ",
+  "beauty": "የውብነት ሳሎን",
+  "health": "ጤና",
+  "fitness": "ስፖርት ቤት",
+  "reviewer":"reviewer",
+  "owners_name":"የቢዝነሱ ባለቤት ስም",
+  "operating_days":"ክፍት የስራ ቀናት",
+  "prince_range":"የዋጋ ንጻሬ"
+
+
+  
+
+  }

@@ -76,5 +76,17 @@
   "all": "All",
   "flagged": "Flagged",
   "five_star": "5 Star Ratings",
-  "reviewer": "Reviewer"
+  "add_business": "Add Business",
+  "shopping": "Shopping",
+  "entertainment": "Entertainment",
+  "beauty": "Beauty",
+  "health": "Health",
+  "fitness": "Fitness",
+  "reviewer":"Reviewer",
+  "owners_name":"Business Owner's name",
+  "operating_days":"Operating Days (e.g,Mon-Fri)",
+  "prince_range":"Price Range(e.g.,$$)"
+ 
+  
+
 }

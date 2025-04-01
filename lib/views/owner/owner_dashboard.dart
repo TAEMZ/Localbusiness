@@ -8,7 +8,8 @@ import 'business_form.dart';
 import 'business_detail_page.dart';
 import '../shared/drawer.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:convex_bottom_bar/convex_bottom_bar.dart'; // ✅ New Package
+import 'package:convex_bottom_bar/convex_bottom_bar.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart'; // ✅ New Package
 
 class OwnerDashboard extends StatefulWidget {
   const OwnerDashboard({super.key});
@@ -49,7 +50,11 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
       stream: _businessesStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+              child: SpinKitWave(
+            color: Colors.black, // Or use Theme.of(context).colorScheme.primary
+            size: 50.0,
+          ));
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Center(child: Text(localization.businesses));
@@ -116,21 +121,28 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
             )
           : null,
       // ✅ Stylish Bottom Navigation
-      bottomNavigationBar: ConvexAppBar(
-        backgroundColor: const Color.fromARGB(255, 211, 185, 255),
-        color: Colors.white,
-        activeColor: const Color.fromARGB(255, 227, 250, 255),
-        initialActiveIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: [
-          TabItem(icon: Icons.home, title: localization.home),
-          TabItem(icon: Icons.reviews, title: localization.review),
-          TabItem(icon: Icons.analytics, title: localization.analytics),
-        ],
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.only(bottom: 5), // Add padding here
+        child: ConvexAppBar(
+          backgroundColor: Colors.white, // Background color of the bar
+          color: Colors.grey[600], // Color of inactive icons
+          activeColor: Colors.deepPurple, // Color of the active icon
+          initialActiveIndex: _currentIndex,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          items: [
+            TabItem(icon: Icons.home, title: localization.home),
+            TabItem(icon: Icons.reviews, title: localization.review),
+            TabItem(icon: Icons.analytics, title: localization.analytics),
+          ],
+          // Use a circular style for the active tab
+          curveSize: 100, // Adjust the curve size of the active tab
+          top: -20, // Move the bar slightly upwards
+          height: 65, // Adjust the height of the bar
+        ),
       ),
     );
   }

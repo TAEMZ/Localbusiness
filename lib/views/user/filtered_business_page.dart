@@ -3,11 +3,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'user_business_card.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class FilteredBusinessPage extends StatelessWidget {
   final String category;
+  final bool isCustomCategory;
 
-  const FilteredBusinessPage({super.key, required this.category});
+  const FilteredBusinessPage({
+    super.key,
+    required this.category,
+    this.isCustomCategory = false,
+  });
 
   Future<Position> _getUserLocation() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -37,41 +43,103 @@ class FilteredBusinessPage extends StatelessWidget {
   Future<List<Map<String, dynamic>>> _fetchBusinessesByCategory() async {
     try {
       final userLocation = await _getUserLocation();
-      final snapshot = await FirebaseFirestore.instance
-          .collection('businesses')
-          .where('category', isEqualTo: category)
-          .get();
+      QuerySnapshot snapshot;
 
-      final businesses = snapshot.docs.map((doc) {
-        final data = doc.data();
-        final businessLocation = data['location'] as Map<String, dynamic>;
-        final businessLat = businessLocation['latitude'] as double;
-        final businessLon = businessLocation['longitude'] as double;
+      if (isCustomCategory) {
+        // Fetch all businesses
+        snapshot =
+            await FirebaseFirestore.instance.collection('businesses').get();
 
-        final distance = calculateDistance(
-          userLocation.latitude,
-          userLocation.longitude,
-          businessLat,
-          businessLon,
-        );
+        // Predefined categories from the form
+        final predefinedCategories = [
+          'Restaurant',
+          'Hairdresser',
+          'Bar',
+          'Delivery',
+          'Coffee',
+          'Shopping',
+          'Fitness',
+          'Health',
+          'Beauty',
+          'Entertainment',
+        ];
 
-        return {
-          'id': doc.id,
-          ...data,
-          'distance': distance, // Add distance to the business data
-        };
-      }).toList();
+        // Filter businesses with custom categories (not in the predefined list)
+        final customBusinesses = snapshot.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final category = data['category'] as String?;
+          return category != null && !predefinedCategories.contains(category);
+        }).toList();
 
-      // Filter businesses within a certain distance (e.g., 10 km)
-      const maxDistance = 1000000; // 10 km in meters
-      final nearbyBusinesses = businesses.where((business) {
-        return business['distance'] <= maxDistance;
-      }).toList();
+        // Map to the required format
+        final businesses = customBusinesses.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final businessLocation = data['location'] as Map<String, dynamic>;
+          final businessLat = businessLocation['latitude'] as double;
+          final businessLon = businessLocation['longitude'] as double;
 
-      debugPrint(
-          'Fetched ${nearbyBusinesses.length} nearby businesses for category: $category');
+          final distance = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            businessLat,
+            businessLon,
+          );
 
-      return nearbyBusinesses;
+          return {
+            'id': doc.id,
+            ...data,
+            'distance': distance, // Add distance to the business data
+          };
+        }).toList();
+
+        // Filter businesses within a certain distance (e.g., 10 km)
+        const maxDistance = 1000000; // 10 km in meters
+        final nearbyBusinesses = businesses.where((business) {
+          return business['distance'] <= maxDistance;
+        }).toList();
+
+        debugPrint(
+            'Fetched ${nearbyBusinesses.length} nearby businesses for custom categories');
+
+        return nearbyBusinesses;
+      } else {
+        // Fetch businesses with the selected category
+        snapshot = await FirebaseFirestore.instance
+            .collection('businesses')
+            .where('category', isEqualTo: category)
+            .get();
+
+        final businesses = snapshot.docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final businessLocation = data['location'] as Map<String, dynamic>;
+          final businessLat = businessLocation['latitude'] as double;
+          final businessLon = businessLocation['longitude'] as double;
+
+          final distance = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            businessLat,
+            businessLon,
+          );
+
+          return {
+            'id': doc.id,
+            ...data,
+            'distance': distance, // Add distance to the business data
+          };
+        }).toList();
+
+        // Filter businesses within a certain distance (e.g., 10 km)
+        const maxDistance = 1000000; // 10 km in meters
+        final nearbyBusinesses = businesses.where((business) {
+          return business['distance'] <= maxDistance;
+        }).toList();
+
+        debugPrint(
+            'Fetched ${nearbyBusinesses.length} nearby businesses for category: $category');
+
+        return nearbyBusinesses;
+      }
     } catch (e) {
       debugPrint('Error fetching businesses: $e');
       return [];
@@ -89,7 +157,12 @@ class FilteredBusinessPage extends StatelessWidget {
         future: _fetchBusinessesByCategory(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: SpinKitWave(
+              color:
+                  Colors.black, // Or use Theme.of(context).colorScheme.primary
+              size: 50.0,
+            ));
           }
           if (snapshot.hasError ||
               snapshot.data == null ||

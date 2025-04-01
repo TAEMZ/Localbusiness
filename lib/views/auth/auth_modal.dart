@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import 'package:localbusiness/widgets/custom_text_field.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class AuthModal extends StatefulWidget {
   final String role; // 'user' or 'owner'
@@ -18,6 +21,7 @@ class _AuthModalState extends State<AuthModal>
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _isObscured = true;
+  final GlobalKey _scaffoldKey = GlobalKey();
 
   void _toggleObscurity() {
     setState(() {
@@ -44,34 +48,56 @@ class _AuthModalState extends State<AuthModal>
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      _showSnackBar('Please fill in all fields');
+      _showTopSnackBar('Please fill in all fields');
       return;
+    }
+    if (!isLogin) {
+      // Check all password requirements at once
+      final hasMinLength = password.length >= 8;
+      final hasUppercase = password.contains(RegExp(r'[A-Z]'));
+      final hasNumber = password.contains(RegExp(r'[0-9]'));
+      final hasSpecialChar =
+          password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+
+      if (!hasMinLength || !hasUppercase || !hasNumber || !hasSpecialChar) {
+        _showTopSnackBar(
+          'Password must contain:\n'
+          '- 8+ characters\n'
+          '- 1 uppercase letter\n'
+          '- 1 number\n'
+          '- 1 special character (!@#\$%^&*)',
+        );
+        return;
+      }
     }
 
     setState(() => _isLoading = true);
 
-    final authService = AuthService();
-    final user = isLogin
-        ? await authService.login(email, password)
-        : await authService.signUp(email, password, widget.role);
+    try {
+      final authService = AuthService();
+      final user = isLogin
+          ? await authService.login(email, password)
+          : await authService.signUp(email, password, widget.role);
 
-    setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
 
-    if (user != null) {
-      // Check if user is an admin
-      if (user.role == 'admin') {
-        Navigator.pop(context); // Close modal
-        Navigator.pushReplacementNamed(context, '/admin_dashboard');
+      if (user != null) {
+        if (user.role == 'admin') {
+          Navigator.pop(context);
+          Navigator.pushReplacementNamed(context, '/admin_dashboard');
+        } else {
+          Navigator.pop(context);
+          Navigator.pushReplacementNamed(
+            context,
+            widget.role == 'user' ? '/user_home' : '/owner_dashboard',
+          );
+        }
       } else {
-        // Default behavior (User or Owner)
-        Navigator.pop(context);
-        Navigator.pushReplacementNamed(
-          context,
-          widget.role == 'user' ? '/user_home' : '/owner_dashboard',
-        );
+        _showTopSnackBar('Authentication failed');
       }
-    } else {
-      _showSnackBar('Authentication failed');
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showTopSnackBar('Error: ${e.toString()}');
     }
   }
 
@@ -79,33 +105,47 @@ class _AuthModalState extends State<AuthModal>
     final email = _emailController.text.trim();
 
     if (email.isEmpty) {
-      _showSnackBar('Enter your email to reset password');
+      _showTopSnackBar('Enter your email to reset password');
       return;
     }
 
     try {
       await AuthService().resetPassword(email);
-      _showSnackBar('Password reset email sent');
+      _showTopSnackBar('Password reset email sent');
     } catch (e) {
-      _showSnackBar('Error: $e');
+      _showTopSnackBar('Error: $e');
     }
   }
 
   Future<void> _signInWithGoogle() async {
     try {
-      await AuthService().signInWithGoogle();
-      // _navigateAfterSignIn();
-    } catch (e) {
-      _showSnackBar('Google Sign-In failed: $e');
-    }
-  }
+      setState(() => _isLoading = true);
 
-  Future<void> _signInWithFacebook() async {
-    try {
-      await AuthService().signInWithFacebook();
-      // _navigateAfterSignIn();
+      // First sign out from Google to clear any cached credentials
+      await GoogleSignIn().signOut();
+
+      // Then sign in with Google, forcing account selection
+      final user = await AuthService().signInWithGoogle(widget.role);
+
+      setState(() => _isLoading = false);
+
+      if (user != null) {
+        if (user.role == 'admin') {
+          Navigator.pop(context);
+          Navigator.pushReplacementNamed(context, '/admin_dashboard');
+        } else {
+          Navigator.pop(context);
+          Navigator.pushReplacementNamed(
+            context,
+            widget.role == 'user' ? '/user_home' : '/owner_dashboard',
+          );
+        }
+      } else {
+        _showTopSnackBar('Google Sign-In failed: No user returned');
+      }
     } catch (e) {
-      _showSnackBar('Facebook Sign-In failed: $e');
+      setState(() => _isLoading = false);
+      _showTopSnackBar('Google Sign-In failed: ${e.toString()}');
     }
   }
 
@@ -114,25 +154,61 @@ class _AuthModalState extends State<AuthModal>
     Navigator.pushReplacementNamed(context, '/user_home');
   }
 
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+  void _showTopSnackBar(String message) {
+    final overlay = Overlay.of(context);
+    final overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).viewInsets.top + 50,
+        left: 20,
+        right: 20,
+        child: Material(
+          color: const Color.fromARGB(0, 102, 100, 100),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 62, 62, 62),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
+
+    // Insert the overlay entry
+    overlay.insert(overlayEntry);
+
+    // Remove the overlay entry after 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
+      overlayEntry.remove();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+      elevation: 0,
       child: Container(
-        height: 490,
+        width: MediaQuery.of(context).size.width * 0.9,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: Colors.white.withOpacity(0.85),
           borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 20,
+              spreadRadius: 5,
+            ),
+          ],
         ),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -151,10 +227,18 @@ class _AuthModalState extends State<AuthModal>
 
   Widget _buildTabBar() {
     return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: Colors.grey[200],
+      ),
       child: TabBar(
         controller: _tabController,
-        labelColor: Colors.white,
-        unselectedLabelColor: Colors.white.withOpacity(0.7),
+        labelColor: Colors.blue,
+        unselectedLabelColor: Colors.grey,
+        indicator: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          color: Colors.white,
+        ),
         tabs: const [
           Tab(text: 'Login'),
           Tab(text: 'Sign Up'),
@@ -169,8 +253,8 @@ class _AuthModalState extends State<AuthModal>
       child: TabBarView(
         controller: _tabController,
         children: [
-          _buildAuthForm(isLogin: true), // Login Tab
-          _buildAuthForm(isLogin: false), // Sign Up Tab
+          _buildAuthForm(isLogin: true),
+          _buildAuthForm(isLogin: false),
         ],
       ),
     );
@@ -181,33 +265,58 @@ class _AuthModalState extends State<AuthModal>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildTextField(
-            controller: _emailController,
-            label: 'Email',
-            icon: Icons.email,
-          ),
+          CustomTextField(hintText: 'Email', controller: _emailController),
           const SizedBox(height: 15),
-          // _buildTextField(
-          //   controller: _passwordController,
-          //   label: 'Password',
-          //   icon: Icons.lock,
-          //   isPassword: true,
-          // ),
           CustomTextField(
             hintText: "Password",
             controller: _passwordController,
             isObscureText: _isObscured,
             suffixIcon: IconButton(
-                icon: Icon(
-                  _isObscured ? Icons.visibility_off : Icons.visibility_sharp,
-                  color: Colors.grey,
-                ),
-                onPressed: _toggleObscurity),
+              icon: Icon(
+                _isObscured ? Icons.visibility_off : Icons.visibility_sharp,
+                color: Colors.grey,
+              ),
+              onPressed: _toggleObscurity,
+            ),
           ),
+          if (!isLogin)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Password must contain:',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  _buildPasswordRequirement(
+                    "8+ characters",
+                    _passwordController.text.length >= 8,
+                  ),
+                  _buildPasswordRequirement(
+                    "1 uppercase letter",
+                    _passwordController.text.contains(RegExp(r'[A-Z]')),
+                  ),
+                  _buildPasswordRequirement(
+                    "1 number",
+                    _passwordController.text.contains(RegExp(r'[0-9]')),
+                  ),
+                  _buildPasswordRequirement(
+                    "1 special character (!@#\$%^&*)",
+                    _passwordController.text
+                        .contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]')),
+                  ),
+                ],
+              ),
+            ),
           if (isLogin) _buildForgotPasswordButton(),
           const SizedBox(height: 10),
           _isLoading
-              ? const CircularProgressIndicator(color: Colors.white)
+              ? SpinKitWave(
+                  color: Colors
+                      .black, // Or use Theme.of(context).colorScheme.primary
+                  size: 50.0,
+                )
               : _buildAuthButton(isLogin),
           const SizedBox(height: 15),
           _buildSocialButtons(),
@@ -216,29 +325,26 @@ class _AuthModalState extends State<AuthModal>
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    bool isPassword = false,
-  }) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.white),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.white),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.white),
-        ),
-        prefixIcon: Icon(icon, color: Colors.white),
+  Widget _buildPasswordRequirement(String text, bool isMet) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Row(
+        children: [
+          Icon(
+            isMet ? Icons.check_circle : Icons.circle,
+            color: isMet ? Colors.green : Colors.grey,
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: TextStyle(
+              color: isMet ? Colors.green : Colors.grey,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
-      style: const TextStyle(color: Colors.white),
     );
   }
 
@@ -249,26 +355,41 @@ class _AuthModalState extends State<AuthModal>
         onPressed: _resetPassword,
         child: const Text(
           'Forgot Password?',
-          style: TextStyle(color: Colors.white, fontSize: 14),
+          style: TextStyle(color: Colors.blue, fontSize: 14),
         ),
       ),
     );
   }
 
   Widget _buildAuthButton(bool isLogin) {
-    return ElevatedButton(
-      onPressed: () => _authenticate(isLogin),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.blue,
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+    return Material(
+      borderRadius: BorderRadius.circular(12),
+      color: Colors.black,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _authenticate(isLogin),
+        splashColor: Colors.blue.withOpacity(0.5),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+          alignment: Alignment.center,
+          child: _isLoading
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: SpinKitWave(
+                    color: Colors
+                        .black, // Or use Theme.of(context).colorScheme.primary
+                    size: 50.0,
+                  ),
+                )
+              : Text(
+                  isLogin ? 'Login' : 'Sign Up',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
         ),
-      ),
-      child: Text(
-        isLogin ? 'Login' : 'Sign Up',
-        style: const TextStyle(fontSize: 16),
       ),
     );
   }
@@ -278,7 +399,7 @@ class _AuthModalState extends State<AuthModal>
       children: [
         const Text(
           'Or continue with',
-          style: TextStyle(color: Colors.white, fontSize: 14),
+          style: TextStyle(color: Colors.black, fontSize: 14),
         ),
         const SizedBox(height: 10),
         SizedBox(
@@ -290,11 +411,6 @@ class _AuthModalState extends State<AuthModal>
                 icon: 'assets/images/google.png',
                 onPressed: _signInWithGoogle,
               ),
-              const SizedBox(width: 10),
-              _buildSocialButton(
-                icon: 'assets/images/facebook.png',
-                onPressed: _signInWithFacebook,
-              ),
             ],
           ),
         ),
@@ -302,18 +418,6 @@ class _AuthModalState extends State<AuthModal>
     );
   }
 
-  // Widget _buildSocialButton({
-  //   required String icon,
-  //   required VoidCallback onPressed,
-  // }) {
-  //   return ClipOval(
-  //     child: IconButton(
-  //       icon: Image.asset(icon),
-  //       onPressed: onPressed,
-  //       iconSize: 24,
-  //     ),
-  //   );
-  // }
   Widget _buildSocialButton({
     required String icon,
     required VoidCallback onPressed,
@@ -321,12 +425,12 @@ class _AuthModalState extends State<AuthModal>
     return Container(
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white, // Adjust color as needed
+        color: Colors.white,
       ),
       child: IconButton(
         icon: Image.asset(icon),
         onPressed: onPressed,
-        iconSize: 24,
+        iconSize: 44,
       ),
     );
   }

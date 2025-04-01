@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '/consts.dart'; // API Key Import
 // Import the Search widget
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class RecommendationPage extends StatefulWidget {
   final Function(String)? onCardClicked;
@@ -290,7 +291,12 @@ class _RecommendationPageState extends State<RecommendationPage> {
               child: const Text("Recommend Based on My Activity"),
             ),
             const SizedBox(height: 10),
-            if (_isLoading) const CircularProgressIndicator(),
+            if (_isLoading)
+              const SpinKitWave(
+                color: Colors
+                    .black, // Or use Theme.of(context).colorScheme.primary
+                size: 50.0,
+              ),
             if (_message.isNotEmpty) Text(_message),
             Expanded(
               child: ListView.builder(

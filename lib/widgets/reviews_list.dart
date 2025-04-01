@@ -173,11 +173,15 @@ class _ReviewsListState extends State<ReviewsList> {
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       review['name'] ?? 'Anonymous',
                       style: const TextStyle(fontSize: 14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -188,11 +192,16 @@ class _ReviewsListState extends State<ReviewsList> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      review['comment'] ?? '',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Text(
+                          review['comment'] ?? '',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),

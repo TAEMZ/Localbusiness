@@ -26,32 +26,6 @@ class BusinessDetailPage extends StatelessWidget {
     }
   }
 
-  Future<void> _launchPhone(String phone) async {
-    final Uri phoneUri = Uri(scheme: 'tel', path: phone);
-    if (await canLaunch(phoneUri.toString())) {
-      await launch(phoneUri.toString());
-    } else {
-      throw 'Could not launch $phoneUri';
-    }
-  }
-
-  Future<void> _launchMap(double latitude, double longitude) async {
-    final Uri mapUri = Uri(
-      scheme: 'https',
-      host: 'www.google.com',
-      path: '/maps/search/',
-      queryParameters: {
-        'api': '1',
-        'query': '$latitude,$longitude',
-      },
-    );
-    if (await canLaunch(mapUri.toString())) {
-      await launch(mapUri.toString());
-    } else {
-      throw 'Could not launch $mapUri';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final localization = AppLocalizations.of(context)!;
@@ -59,14 +33,15 @@ class BusinessDetailPage extends StatelessWidget {
     final String description = business['description'] ?? 'No Description';
     final String phone = business['phone'] ?? 'No Phone';
     final String city = business['city'] ?? 'No City';
-    final String address = business['address'] ?? 'No Address';
     final String category = business['category'] ?? 'No Category';
     final String openingHours = business['opening_hours'] ?? 'N/A';
     final String closingHours = business['closing_hours'] ?? 'N/A';
+    final String ownerName = business['owner_name'] ?? 'No Owner Name';
+    final String priceRange = business['price_range'] ?? 'No Price Range';
+    final String operatingDays =
+        business['operating_days'] ?? 'No Operating Days';
     final List<String> imageUrls =
         (business['images'] as List<dynamic>?)?.cast<String>() ?? [];
-    final double? latitude = business['location']?['latitude'];
-    final double? longitude = business['location']?['longitude'];
 
     return Scaffold(
       appBar: AppBar(
@@ -153,9 +128,14 @@ class BusinessDetailPage extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Description
-            Text(
-              description,
-              style: TextStyle(fontSize: 16.0, color: Colors.grey[700]),
+            SizedBox(
+              height: 100, // Set a fixed height for the description
+              child: SingleChildScrollView(
+                child: Text(
+                  description,
+                  style: TextStyle(fontSize: 16.0, color: Colors.grey[700]),
+                ),
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -167,17 +147,34 @@ class BusinessDetailPage extends StatelessWidget {
                   icon: Icons.phone,
                   label: 'Phone',
                   value: phone,
-                  onTap: () => _launchPhone(phone),
                 ),
                 _InfoItem(
-                  icon: Icons.map,
-                  label: 'Location',
-                  value: 'View on Map',
-                  onTap: () {
-                    if (latitude != null && longitude != null) {
-                      _launchMap(latitude, longitude);
-                    }
-                  },
+                  icon: Icons.location_city,
+                  label: 'City',
+                  value: city,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Owner Info
+            _InfoCard(
+              children: [
+                _InfoItem(
+                  icon: Icons.person,
+                  label: 'Owner Name',
+                  value: ownerName,
+                ),
+                _InfoItem(
+                  icon: Icons.attach_money,
+                  label: 'Price Range',
+                  value: priceRange,
+                ),
+                _InfoItem(
+                  icon: Icons.calendar_today,
+                  label: 'Operating Days',
+                  value: operatingDays,
                 ),
               ],
             ),

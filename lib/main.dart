@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -9,14 +10,12 @@ import 'firebase_options.dart';
 import 'views/admin/admin_dashboard.dart';
 import 'views/auth/splash_screen.dart';
 import 'views/auth/welcome_page.dart';
-import 'views/auth/signup_user_page.dart';
-import 'views/auth/signup_owner_page.dart';
-import 'views/auth/login_page.dart';
 import 'views/user/user_home_page.dart';
 import 'views/owner/owner_dashboard.dart';
 import 'widgets/theme_provider.dart';
 import 'widgets/locale_provider.dart';
 import 'models/firebase_notifications.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'consts.dart'; // ✅ Import Firebase Notifications
@@ -49,6 +48,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final localeProvider = Provider.of<LocaleProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final String businessId;
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -65,6 +65,7 @@ class MyApp extends StatelessWidget {
         Locale('en'),
         Locale('am'),
         Locale('fr'),
+        Locale('es'),
       ],
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -73,14 +74,12 @@ class MyApp extends StatelessWidget {
       ],
       home: const AuthWrapper(),
       routes: {
-        '/signup_user': (context) => SignupUserPage(),
-        '/signup_owner': (context) => SignupOwnerPage(),
-        '/login_user': (context) => LoginPage(userRole: 'user'),
-        '/login_owner': (context) => LoginPage(userRole: 'owner'),
-        '/user_home': (context) => const UserHomePage(),
+        '/user_home': (context) => const UserHomePage(
+              businessId: '',
+            ),
         '/owner_dashboard': (context) => const OwnerDashboard(),
         '/admin_dashboard': (context) => const AdminDashboard(),
-        '/welcome_page': (context) => const WelcomePage()
+        '/welcome_page': (context) => const WelcomePage(),
       },
     );
   }
@@ -113,7 +112,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
       } else if (role == 'owner') {
         return const OwnerDashboard();
       } else {
-        return const UserHomePage();
+        return const UserHomePage(
+          businessId: '',
+        );
       }
     } catch (e) {
       print('AuthWrapper Error: $e');
@@ -134,7 +135,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
       future: determineStartPage(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: SpinKitFadingCircle(
+              size: 50.0,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          );
         }
         if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
