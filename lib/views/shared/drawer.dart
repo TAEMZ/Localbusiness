@@ -418,7 +418,7 @@ class _SharedDrawerState extends State<SharedDrawer> {
                           ListTile(
                             leading: CircleAvatar(child: Icon(Icons.person)),
                             title: Text('Abiy kibru'),
-                            subtitle: Text('Lead Developer'),
+                            subtitle: Text('Flutter Developer'),
                           ),
                           ListTile(
                             leading: CircleAvatar(child: Icon(Icons.person)),
@@ -428,12 +428,12 @@ class _SharedDrawerState extends State<SharedDrawer> {
                           ListTile(
                             leading: CircleAvatar(child: Icon(Icons.person)),
                             title: Text('Selamu Meshesha'),
-                            subtitle: Text('Backend Developer'),
+                            subtitle: Text('Database designer'),
                           ),
                           ListTile(
                             leading: CircleAvatar(child: Icon(Icons.person)),
                             title: Text('Tsion Negash'),
-                            subtitle: Text('Quality Assurance'),
+                            subtitle: Text('Bckend developer'),
                           ),
                         ],
                       ),

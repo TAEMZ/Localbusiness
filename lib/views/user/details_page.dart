@@ -5,7 +5,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:localbusiness/widgets/reviews_dialog.dart';
 import 'package:localbusiness/views/user/call_action.dart';
 import 'package:localbusiness/views/user/email_action.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:localbusiness/views/auth/auth_modal.dart';
 import 'package:localbusiness/views/user/sharing_service.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -99,8 +98,8 @@ class DetailsPage extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
                 child: SpinKitWave(
-              color:
-                  Colors.black, // Or use Theme.of(context).colorScheme.primary
+              color: Color.fromARGB(255, 133, 128,
+                  128), // Or use Theme.of(context).colorScheme.primary
               size: 50.0,
             ));
           }
@@ -265,7 +264,7 @@ class DetailsPage extends StatelessWidget {
                         children: [
                           _buildActionButton(
                             icon: Icons.call,
-                            label: 'Call',
+                            label: localization.call,
                             color: Colors.green,
                             onPressed: isGuest
                                 ? () => _showAuthModal(context) // 🚨 Blocked!
@@ -273,7 +272,7 @@ class DetailsPage extends StatelessWidget {
                           ),
                           _buildActionButton(
                             icon: Icons.email,
-                            label: 'Email',
+                            label: localization.email,
                             color: Colors.blue,
                             onPressed: isGuest
                                 ? () => _showAuthModal(context) // 🚨 Blocked!
@@ -287,7 +286,7 @@ class DetailsPage extends StatelessWidget {
                           // In your DetailsPage widget's action button:
                           _buildActionButton(
                             icon: Icons.share,
-                            label: 'Share',
+                            label: localization.share,
                             color: Colors.blueAccent,
                             onPressed: isGuest
                                 ? () => _showAuthModal(context)
@@ -301,7 +300,7 @@ class DetailsPage extends StatelessWidget {
                           ),
                           _buildActionButton(
                             icon: Icons.rate_review,
-                            label: 'Review',
+                            label: localization.review,
                             color: Colors.orange,
                             onPressed: isGuest
                                 ? () => _showAuthModal(context) // 🚨 Blocked!

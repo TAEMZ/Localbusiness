@@ -85,6 +85,19 @@
   "reviewer":"reviewer",
   "owners_name":"owener's name",
   "operating_days":"Operating days (e.g,Mon-Fri)",
-  "prince_range":"Price Range(e.g.,$$)"
+  "prince_range":"Price Range(e.g.,$$)",
+  "failed_to_delete_business":"Failed to delete business",
+  "delete":"Delete",
+  "are_you_sure_you_want_to_delete_business":"Are You Sure You Want To Proceed",
+  "delete_business_title":"Delete Business ",
+  "manage_your_business":"ቢዝነሶትን ያስተዳድሩ",
+  "continue_as_guest":"በእንግድነት ይቀጥሉ",
+  "login":"Login",
+  "sign_up":"Sign up",
+  "or_continue_with":"Or continue with",
+  "call":"ይደውሉ",
+  "email":"ኢሜይል",
+  "share":"ያጋሩ"
+
  
 }

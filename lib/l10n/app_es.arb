@@ -81,6 +81,18 @@
   "fitness": "bola birshiyo keta",
   "reviewer": "qofa imiyaga",
   "owners_name": "osuwa gadawa sunta",
-  "operating_days": "doya otiyosa"
+  "operating_days": "doya otiyosa",
+  "failed_to_delete_business":"Failed to delete business",
+  "delete":"Delete",
+  "are_you_sure_you_want_to_delete_business":"Are You Sure You Want To Proceed",
+  "delete_business_title":"Delete Business ",
+  "manage_your_business":"ቢዝነሶትን ያስተዳድሩ",
+  "continue_as_guest":"በእንግድነት ይቀጥሉ",
+  "login":"Login",
+  "sign_up":"Sign up",
+  "or_continue_with":"Or continue with",
+  "call":"ይደውሉ",
+  "email":"ኢሜይል",
+  "share":"ያጋሩ"
 
 }

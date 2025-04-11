@@ -136,9 +136,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
-            child: SpinKitFadingCircle(
+            child: SpinKitWave(
               size: 50.0,
-              color: Theme.of(context).colorScheme.primary,
+              color: Color.fromARGB(255, 133, 128, 128),
             ),
           );
         }

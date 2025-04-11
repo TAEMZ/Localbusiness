@@ -293,8 +293,8 @@ class _RecommendationPageState extends State<RecommendationPage> {
             const SizedBox(height: 10),
             if (_isLoading)
               const SpinKitWave(
-                color: Colors
-                    .black, // Or use Theme.of(context).colorScheme.primary
+                color: Color.fromARGB(255, 133, 128,
+                    128), // Or use Theme.of(context).colorScheme.primary
                 size: 50.0,
               ),
             if (_message.isNotEmpty) Text(_message),

@@ -61,8 +61,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
                 child: SpinKitWave(
-              color:
-                  Colors.black, // Or use Theme.of(context).colorScheme.primary
+              color: Color.fromARGB(255, 133, 128,
+                  128), // Or use Theme.of(context).colorScheme.primary
               size: 50.0,
             ));
           }

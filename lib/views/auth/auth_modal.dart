@@ -4,6 +4,7 @@ import 'package:localbusiness/widgets/custom_text_field.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AuthModal extends StatefulWidget {
   final String role; // 'user' or 'owner'
@@ -82,6 +83,12 @@ class _AuthModalState extends State<AuthModal>
       setState(() => _isLoading = false);
 
       if (user != null) {
+        // Add role validation check
+        if (user.role != widget.role && user.role != 'admin') {
+          _showTopSnackBar('Access denied: Invalid role for this section');
+          return;
+        }
+
         if (user.role == 'admin') {
           Navigator.pop(context);
           Navigator.pushReplacementNamed(context, '/admin_dashboard');
@@ -89,7 +96,7 @@ class _AuthModalState extends State<AuthModal>
           Navigator.pop(context);
           Navigator.pushReplacementNamed(
             context,
-            widget.role == 'user' ? '/user_home' : '/owner_dashboard',
+            user.role == 'user' ? '/user_home' : '/owner_dashboard',
           );
         }
       } else {
@@ -130,18 +137,22 @@ class _AuthModalState extends State<AuthModal>
       setState(() => _isLoading = false);
 
       if (user != null) {
+        // Add strict role validation
+        if (user.role != widget.role && user.role != 'admin') {
+          _showTopSnackBar(
+              '❌ Access restricted to ${widget.role == 'user' ? 'regular users' : 'business owners'}');
+          // Force logout invalid user
+          return;
+        }
+
         if (user.role == 'admin') {
-          Navigator.pop(context);
           Navigator.pushReplacementNamed(context, '/admin_dashboard');
         } else {
-          Navigator.pop(context);
           Navigator.pushReplacementNamed(
             context,
-            widget.role == 'user' ? '/user_home' : '/owner_dashboard',
+            user.role == 'user' ? '/user_home' : '/owner_dashboard',
           );
         }
-      } else {
-        _showTopSnackBar('Google Sign-In failed: No user returned');
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -313,8 +324,8 @@ class _AuthModalState extends State<AuthModal>
           const SizedBox(height: 10),
           _isLoading
               ? SpinKitWave(
-                  color: Colors
-                      .black, // Or use Theme.of(context).colorScheme.primary
+                  color: Color.fromARGB(255, 133, 128,
+                      128), // Or use Theme.of(context).colorScheme.primary
                   size: 50.0,
                 )
               : _buildAuthButton(isLogin),
@@ -362,6 +373,7 @@ class _AuthModalState extends State<AuthModal>
   }
 
   Widget _buildAuthButton(bool isLogin) {
+    final localization = AppLocalizations.of(context)!;
     return Material(
       borderRadius: BorderRadius.circular(12),
       color: Colors.black,
@@ -383,7 +395,7 @@ class _AuthModalState extends State<AuthModal>
                   ),
                 )
               : Text(
-                  isLogin ? 'Login' : 'Sign Up',
+                  isLogin ? localization.login : localization.sign_up,
                   style: const TextStyle(
                     fontSize: 16,
                     color: Colors.white,
@@ -395,10 +407,11 @@ class _AuthModalState extends State<AuthModal>
   }
 
   Widget _buildSocialButtons() {
+    final localization = AppLocalizations.of(context)!;
     return Column(
       children: [
-        const Text(
-          'Or continue with',
+        Text(
+          localization.or_continue_with,
           style: TextStyle(color: Colors.black, fontSize: 14),
         ),
         const SizedBox(height: 10),

@@ -10,19 +10,42 @@ class BusinessDetailPage extends StatelessWidget {
   const BusinessDetailPage({super.key, required this.business});
 
   Future<void> deleteBusiness(BuildContext context) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('businesses')
-          .doc(business['id'])
-          .delete();
-      Navigator.pop(context);
-      final localization = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(localization.business_deleted)));
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to delete business')),
-      );
+    final localization = AppLocalizations.of(context)!;
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localization.delete_business_title),
+        content: Text(localization.are_you_sure_you_want_to_delete_business),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(localization.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(localization.delete),
+          ),
+        ],
+      ),
+    );
+
+    // If user confirmed deletion
+    if (confirmed == true) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('businesses')
+            .doc(business['id'])
+            .delete();
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(localization.business_deleted)));
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(localization.failed_to_delete_business)),
+        );
+      }
     }
   }
 

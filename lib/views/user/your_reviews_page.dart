@@ -59,21 +59,46 @@ class _MyReviewsState extends State<MyReviews> {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return;
 
-    try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .collection('reviews')
-          .doc(reviewId)
-          .delete();
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Review'),
+        content: const Text('Are you sure you want to delete this review?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Review deleted successfully')),
-      );
+    // If user confirmed deletion
+    if (confirmed == true) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('reviews')
+            .doc(reviewId)
+            .delete();
 
-      setState(() {}); // Refresh after deletion
-    } catch (e) {
-      debugPrint('Error deleting review: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Review deleted successfully')),
+        );
+
+        setState(() {}); // Refresh after deletion
+      } catch (e) {
+        debugPrint('Error deleting review: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete review')),
+        );
+      }
     }
   }
 
@@ -102,8 +127,8 @@ class _MyReviewsState extends State<MyReviews> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
                 child: SpinKitWave(
-              color:
-                  Colors.black, // Or use Theme.of(context).colorScheme.primary
+              color: Color.fromARGB(255, 133, 128,
+                  128), // Or use Theme.of(context).colorScheme.primary
               size: 50.0,
             ));
           }

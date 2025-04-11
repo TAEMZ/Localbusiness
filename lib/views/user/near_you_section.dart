@@ -52,7 +52,7 @@ class _NearYouSectionState extends State<NearYouSection> {
         // Scroll to the next item
         _scrollController.animateTo(
           currentScroll + 150, // Adjust this value based on your item width
-          duration: const Duration(seconds: 1),
+          duration: const Duration(seconds: 2),
           curve: Curves.easeInOut,
         );
       }
@@ -182,7 +182,7 @@ class _NearYouSectionState extends State<NearYouSection> {
       businesses.sort((a, b) => a['distance'].compareTo(b['distance']));
 
       return businesses
-          .where((business) => business['distance'] <= 900000)
+          .where((business) => business['distance'] <= 5000)
           .toList();
     } catch (e) {
       debugPrint('Error fetching businesses: $e');
@@ -195,7 +195,7 @@ class _NearYouSectionState extends State<NearYouSection> {
       height: 200,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: 5,
+        itemCount: 10,
         itemBuilder: (context, index) {
           return Shimmer.fromColors(
             baseColor: Colors.grey[300]!,

@@ -72,6 +72,7 @@ dependencies:
   convex_bottom_bar: ^3.2.0
   logger: ^2.5.0
   flutter_cache_manager: ^3.4.1
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -113,6 +114,7 @@ flutter:
     - assets/images/appp.jpg
     - assets/animations/mapanimation.json
     - assets/images/background.jpg
+    - assets/animations/login.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

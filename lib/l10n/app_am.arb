@@ -85,9 +85,19 @@
   "reviewer":"reviewer",
   "owners_name":"የቢዝነሱ ባለቤት ስም",
   "operating_days":"ክፍት የስራ ቀናት",
-  "prince_range":"የዋጋ ንጻሬ"
-
-
-  
-
+  "prince_range":"የዋጋ ንጻሬ",
+  "failed_to_delete_business":"ቢዝነሱን ማጥፋት አልተቻለም",
+  "delete":"አጥፋጥፋ",
+  "are_you_sure_you_want_to_delete_business":"እርግጠኛ ኖት",
+  "delete_business_title":"ቢዝነስ አጥፋ",
+  "manage_your_business":"ቢዝነሶትን ያስተዳድሩ",
+  "continue_as_guest":"በእንግድነት ይቀጥሉ",
+  "login":"ይግቡ",
+  "sign_up":"ይመዝገቡ",
+  "or_continue_with":"ተለዋችጭ ምርጫ",
+  "call":"ይደውሉ",
+  "email":"ኢሜይል",
+  "share":"ያጋሩ"
+ 
+ 
   }

@@ -81,7 +81,7 @@ class _BusinessFormState extends State<BusinessForm> {
       cityController.text = widget.business!['city'] ?? '';
       openingController.text = widget.business!['opening_hours'] ?? '';
       closingController.text = widget.business!['closing_hours'] ?? '';
-      ownernameController.text = widget.business!['owener_name'] ?? '';
+      ownernameController.text = widget.business!['owner_name'] ?? '';
       operatingDaysController.text = widget.business!['operating_days'] ?? '';
       priceRangeController.text = widget.business!['price_range'] ?? '';
       final String businessCategory = widget.business!['category'] ?? '';
@@ -98,6 +98,12 @@ class _BusinessFormState extends State<BusinessForm> {
       if (widget.business!['location'] != null) {
         final loc = widget.business!['location'];
         selectedLocation = LatLng(loc['latitude'], loc['longitude']);
+
+        _locationName = widget.business!['locationName'] ??
+            await LocationUtils.getLocationName(
+              loc['latitude'],
+              loc['longitude'],
+            );
       }
     }
   }
@@ -235,6 +241,7 @@ class _BusinessFormState extends State<BusinessForm> {
           'latitude': selectedLocation!.latitude,
           'longitude': selectedLocation!.longitude,
         };
+        businessData['locationName'] = _locationName;
       }
 
       /// ✅ **Check if editing an existing business**
@@ -269,8 +276,13 @@ class _BusinessFormState extends State<BusinessForm> {
   }
 
   Future<void> _generateDescription() async {
+    // Determine which category to use
+    String categoryToUse = _showCustomCategoryField
+        ? customCategoryController.text.trim()
+        : selectedCategory ?? '';
+
     if (nameController.text.isEmpty ||
-        selectedCategory == null ||
+        categoryToUse.isEmpty ||
         cityController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -288,7 +300,7 @@ class _BusinessFormState extends State<BusinessForm> {
     try {
       final description = await AIDescriptionGenerator.generateDescription(
         name: nameController.text.trim(),
-        category: selectedCategory!,
+        category: categoryToUse,
         city: cityController.text.trim(),
       );
 
@@ -380,8 +392,8 @@ class _BusinessFormState extends State<BusinessForm> {
       body: _isLoading
           ? const Center(
               child: SpinKitWave(
-              color:
-                  Colors.black, // Or use Theme.of(context).colorScheme.primary
+              color: Color.fromARGB(255, 133, 128,
+                  128), // Or use Theme.of(context).colorScheme.primary
               size: 50.0,
             ))
           : Padding(

@@ -139,8 +139,8 @@ class _PickLocationPageState extends State<PickLocationPage> {
       body: _selectedLocation == null
           ? const Center(
               child: SpinKitWave(
-              color:
-                  Colors.black, // Or use Theme.of(context).colorScheme.primary
+              color: Color.fromARGB(255, 133, 128,
+                  128), // Or use Theme.of(context).colorScheme.primary
               size: 50.0,
             ))
           : GoogleMap(

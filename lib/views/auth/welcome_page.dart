@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:localbusiness/widgets/locale_provider.dart';
 import 'package:lottie/lottie.dart';
 import 'auth_modal.dart';
 import '../user/user_home_page.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
@@ -20,8 +25,9 @@ class _WelcomePageState extends State<WelcomePage>
     // Initialize the animation controller
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat(); // Loop the animation infinitely
+    );
+
+    // We'll set the duration after the animation is loaded
   }
 
   @override
@@ -35,142 +41,177 @@ class _WelcomePageState extends State<WelcomePage>
       context,
       MaterialPageRoute(
         builder: (context) => page,
-        maintainState: true, // This keeps the previous route alive
-        fullscreenDialog: true, // Optional: makes the modal appear from bottom
+        maintainState: true,
+        fullscreenDialog: true,
       ),
     );
   }
 
+  String _getCurrentLanguageName(String? languageCode) {
+    switch (languageCode) {
+      case 'en':
+        return 'English';
+      case 'am':
+        return 'አማርኛ';
+      case 'fr':
+        return 'ስልጢኛ';
+      case 'es':
+        return 'ወላይትኛ';
+      default:
+        return 'English';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final localeProvider = Provider.of<LocaleProvider>(context);
+    final localization = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: Stack(
         children: [
           // Lottie Animation Background
           Positioned.fill(
-            child: Lottie.asset(
-              'assets/animations/mapanimation.json',
-              fit: BoxFit.cover,
-              alignment:
-                  const Alignment(-0.2, 0), // Adjusted alignment to move left
-              controller: _animationController, // Attach the controller
-              onLoaded: (composition) {
-                // Play the animation when loaded
-                _animationController
-                  ..duration = composition.duration
-                  ..forward();
-              },
-              errorBuilder: (context, error, stackTrace) {
-                debugPrint('Error loading Lottie animation: $error');
-                return const Center(
-                  child: Text(
-                    'Failed to load animation',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
+            child: IgnorePointer(
+              ignoring: true,
+              child: Lottie.asset(
+                'assets/animations/mapanimation.json',
+                fit: BoxFit.cover,
+                alignment: const Alignment(-3, 0),
+                controller: _animationController,
+                onLoaded: (composition) {
+                  _animationController
+                    ..duration = composition.duration
+                    ..repeat();
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Text(
+                      'Failed to load animation',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
 
-          // Rest of the content
+          // Main Content with SafeArea
           SafeArea(
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height,
-              child: Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(height: 200),
-                            const Text(
-                              '"Get connected discover yourselves"',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 18,
+            child: Stack(
+              children: [
+                // Center content
+                SizedBox(
+                  height: MediaQuery.of(context).size.height,
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 140),
+                          Text(
+                            '"Get connected discover yourselves"',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.parisienne(
+                              fontSize: 36,
+                              color: const Color(0xFFF5E9D9),
+                              shadows: [
+                                const Shadow(
+                                  blurRadius: 8.0,
+                                  color: Color.fromARGB(150, 100, 80, 60),
+                                  offset: Offset(3.0, 3.0),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 55),
+                          _buildButton(
+                            context,
+                            icon: Icons.business,
+                            label: localization.manage_your_business,
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              _navigateWithoutStoppingAnimation(
+                                context,
+                                const AuthModal(role: 'owner'),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                          _buildButton(
+                            context,
+                            icon: Icons.search,
+                            label: localization.discover_businesses,
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              _navigateWithoutStoppingAnimation(
+                                context,
+                                const AuthModal(role: 'user'),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 30),
+                          TextButton(
+                            onPressed: () {
+                              _navigateWithoutStoppingAnimation(
+                                context,
+                                const UserHomePage(
+                                  isGuest: true,
+                                  businessId: '',
+                                ),
+                              );
+                            },
+                            child: Text(
+                              localization.continue_as_guest,
+                              style: GoogleFonts.playfairDisplay(
+                                fontSize: 17,
                                 fontWeight: FontWeight.bold,
-                                color: Color.fromARGB(255, 255, 241, 241),
-                                fontFamily: 'Roboto',
+                                color: const Color.fromARGB(255, 190, 148, 190),
+                                fontStyle: FontStyle.italic,
                                 shadows: [
-                                  Shadow(
+                                  const Shadow(
                                     blurRadius: 10.0,
-                                    color: Color.fromARGB(255, 92, 86, 86),
+                                    color: Color.fromARGB(255, 70, 72, 72),
                                     offset: Offset(2.0, 2.0),
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 55),
-
-                            // Continue as Business Owner
-                            _buildButton(
-                              context,
-                              icon: Icons.business,
-                              label: 'Manage your Business',
-                              onPressed: () {
-                                _navigateWithoutStoppingAnimation(
-                                  context,
-                                  const AuthModal(role: 'owner'),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 20),
-
-                            // Continue as Regular User
-                            _buildButton(
-                              context,
-                              icon: Icons.search,
-                              label: 'Discover Businesses',
-                              onPressed: () {
-                                _navigateWithoutStoppingAnimation(
-                                  context,
-                                  const AuthModal(role: 'user'),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 40),
-
-                            // Continue as Guest
-                            TextButton(
-                              onPressed: () {
-                                _navigateWithoutStoppingAnimation(
-                                  context,
-                                  const UserHomePage(
-                                    isGuest: true,
-                                    businessId: '',
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                'Continue as Guest',
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color.fromARGB(255, 171, 148, 192),
-                                  fontFamily: 'Pacifico',
-                                  shadows: [
-                                    Shadow(
-                                      blurRadius: 10.0,
-                                      color: Color.fromARGB(255, 88, 92, 93),
-                                      offset: Offset(2.0, 2.0),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+
+                // Language dropdown at top right (moved to be last in Stack)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _getCurrentLanguageName(
+                                localeProvider.locale?.languageCode),
+                            style: GoogleFonts.playfairDisplay(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _buildLanguageDropdown(context),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -178,7 +219,49 @@ class _WelcomePageState extends State<WelcomePage>
     );
   }
 
-  // Helper function for buttons
+  Widget _buildLanguageDropdown(BuildContext context) {
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+
+    return Material(
+      color: Colors.transparent,
+      child: PopupMenuButton<String>(
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.black.withOpacity(0.3),
+          ),
+          child: const Icon(Icons.language, color: Colors.white, size: 24),
+        ),
+        tooltip: 'Change Language',
+        position: PopupMenuPosition.under,
+        onSelected: (String languageCode) {
+          localeProvider.setLocale(Locale(languageCode));
+        },
+        itemBuilder: (BuildContext context) {
+          return [
+            const PopupMenuItem<String>(
+              value: 'en',
+              child: Text('English'),
+            ),
+            const PopupMenuItem<String>(
+              value: 'am',
+              child: Text('አማርኛ'),
+            ),
+            const PopupMenuItem<String>(
+              value: 'fr',
+              child: Text('ስልጢኛ'),
+            ),
+            const PopupMenuItem<String>(
+              value: 'es',
+              child: Text('ወላይትኛ'),
+            ),
+          ];
+        },
+      ),
+    );
+  }
+
   Widget _buildButton(BuildContext context,
       {required IconData icon,
       required String label,
@@ -188,18 +271,18 @@ class _WelcomePageState extends State<WelcomePage>
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-              const Color.fromARGB(255, 178, 224, 255).withOpacity(0.3),
-          foregroundColor: const Color.fromARGB(255, 0, 0, 0),
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          backgroundColor: Colors.white.withOpacity(0.15), // More subtle
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-            side: const BorderSide(
-                color: Color.fromARGB(255, 224, 226, 255), width: 2),
+            borderRadius: BorderRadius.circular(40), // More rounded
+            side: BorderSide(
+              color: Colors.white.withOpacity(0.5), // Lighter border
+              width: 1.5,
+            ),
           ),
-          elevation: 30,
-          shadowColor:
-              const Color.fromARGB(255, 229, 248, 255).withOpacity(0.5),
+          elevation: 8,
+          shadowColor: Colors.purple[100]!.withOpacity(0.3),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -208,15 +291,21 @@ class _WelcomePageState extends State<WelcomePage>
             const SizedBox(width: 10),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Pacifico',
-                shadows: [
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 20, // Slightly larger for better readability
+                fontWeight: FontWeight
+                    .w600, // Semi-bold (Playfair doesn't have bold italic)
+                fontStyle: FontStyle
+                    .italic, // This gives us the elegant italic variant
+                color: const Color.fromARGB(
+                    255, 54, 53, 53), // Maintain your original text color
+                letterSpacing: 0.5, // Slight letter spacing for elegance
+                shadows: const [
                   Shadow(
-                    blurRadius: 5.0,
-                    color: Color.fromARGB(255, 255, 241, 241),
-                    offset: Offset(2.0, 2.0),
+                    blurRadius: 4.0, // More subtle shadow
+                    color: Color.fromARGB(
+                        148, 153, 140, 140), // Softer shadow color
+                    offset: Offset(1.5, 1.5),
                   ),
                 ],
               ),

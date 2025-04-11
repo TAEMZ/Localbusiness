@@ -75,7 +75,7 @@ class AuthService {
   }
 
   // Google Sign-In
-  Future<UserModel?> signInWithGoogle(String role) async {
+  Future<UserModel?> signInWithGoogle(String requestedRole) async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) return null; // User canceled sign-in
@@ -94,15 +94,28 @@ class AuthService {
       if (user != null) {
         final userDoc =
             await _firestore.collection('users').doc(user.uid).get();
-        if (!userDoc.exists) {
+
+        if (userDoc.exists) {
+          final actualRole = userDoc.data()?['role'];
+          // Prevent role switching
+          if (actualRole != requestedRole && actualRole != 'admin') {
+            throw Exception('Account not authorized for this section');
+          }
+          return UserModel(
+              uid: user.uid,
+              email: user.email!,
+              role: actualRole // Return stored role, not requestedRole
+              );
+        } else {
+          // Only set role during initial signup
           await _firestore.collection('users').doc(user.uid).set({
             'email': user.email,
-            'role': role, // Use the passed role instead of hardcoding 'user'
+            'role': requestedRole,
             'created_at': FieldValue.serverTimestamp(),
           });
+          return UserModel(
+              uid: user.uid, email: user.email!, role: requestedRole);
         }
-
-        return UserModel(uid: user.uid, email: user.email!, role: role);
       }
     } catch (e) {
       print('Google Sign-In Error: $e');
