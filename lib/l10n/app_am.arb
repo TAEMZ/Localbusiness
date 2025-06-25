@@ -54,11 +54,12 @@
   "submit": "አስገባ",
   "analytics": "ትንታኔ",
   "your_analytics": "የእርስዎ ትንታኔ",
-  "total_rating": "እርስዎ ውድቀት",
+  "total_rating": "አማካይ ደረጃ",
   "total_reviews": "ጠቅላላ አስተያየቶች",
-  "total_positive": "ጠቅላላ አደገኛ አስተያየቶች",
-  "total_negative": "ጠቅላላ አስተያየቶች",
-  "times_searched": "እንድን ተገኝ",
+  "total_positive": "አዎንታዊ ደረጃዎች",
+  "total_negative": "አሉታዊ አስተያየቶች",
+  "total_businesses": "ጠቅላላ ንግዶች",
+  "total_flags": "ጠቅላላ ማስጠንቀቂያዎች",
   "businesses": "ቢዝነስ አልተገኘም",
   "owner_dashboard": "የባለቤት መቆጣጠሪያ",
   "delivery": "ትራንስፖርት",
@@ -97,7 +98,21 @@
   "or_continue_with":"ተለዋችጭ ምርጫ",
   "call":"ይደውሉ",
   "email":"ኢሜይል",
-  "share":"ያጋሩ"
+  "share":"ያጋሩ",
+  "others":"ተጨማሪ",
+  "fetching_Directions":"መገኛዎትን በመፈለግ ላይ...",
+  "get_directions":"Get Directions",
+  "about":"ዝርዝር",
+   "find_businesses":"ቢዝነስ ይፈልጉ",
+  "what_are_you_looking":"ምን እየፈለጉ ነውነው?",
+  "recommend":"በእንቅስቃሴ መሰረት ይምከሩ",
+  "enable_location": "አካባቢ ማግኘት ይፈቀዳል",
+  "enable_notification": "ማሳወቂያዎች ይፈቀዳሉ",
+  "settings": "ማስተካከያዎች",
+  "terms_of_service": "የአገልግሎት ውሎች",
+  "credits": "ምስጋናዎች",
+  "all_categories":"ሁሉም ምርጫዎች"
+  
  
- 
+
   }

@@ -87,6 +87,7 @@ class OwnerAnalyticsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(localization.analytics),
+        automaticallyImplyLeading: false,
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -131,42 +132,42 @@ class OwnerAnalyticsPage extends StatelessWidget {
                   _buildAnalyticsCard(
                     context,
                     icon: Icons.business,
-                    title: 'Total Businesses',
+                    title: localization.total_businesses,
                     value: '${analytics['totalBusinesses'] ?? 0}',
                     color: Colors.blue,
                   ),
                   _buildAnalyticsCard(
                     context,
                     icon: Icons.rate_review,
-                    title: 'Total Reviews',
+                    title: localization.total_reviews,
                     value: '${analytics['totalReviews'] ?? 0}',
                     color: Colors.green,
                   ),
                   _buildAnalyticsCardWithRating(
                     context,
                     icon: Icons.star,
-                    title: 'Average Rating',
+                    title: localization.total_rating,
                     rating: analytics['averageRating'] ?? 0.0,
                     color: Colors.amber,
                   ),
                   _buildAnalyticsCard(
                     context,
                     icon: Icons.thumb_up,
-                    title: 'Positive Reviews',
+                    title: localization.total_positive,
                     value: '${analytics['totalPositiveReviews'] ?? 0}',
                     color: Colors.blue,
                   ),
                   _buildAnalyticsCard(
                     context,
                     icon: Icons.thumb_down,
-                    title: 'Negative Reviews',
+                    title: localization.total_negative,
                     value: '${analytics['totalNegativeReviews'] ?? 0}',
                     color: Colors.red,
                   ),
                   _buildAnalyticsCard(
                     context,
                     icon: Icons.flag,
-                    title: 'Total Flags',
+                    title: localization.total_flags,
                     value: '${analytics['totalFlags'] ?? 0}',
                     color: Colors.purple,
                   ),
@@ -265,7 +266,7 @@ class OwnerAnalyticsPage extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 4), // Reduced spacing
+              const SizedBox(height: 4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(

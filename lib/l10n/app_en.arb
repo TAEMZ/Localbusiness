@@ -54,11 +54,12 @@
   "submit": "Submit",
   "analytics": "Analytics",
   "your_analytics": "Your Analytics",
-  "total_rating": "Your Total Rating",
+  "total_rating": "Average Rating",
   "total_reviews": "Total Reviews",
-  "total_positive": "Total Positive Ratings",
-  "total_negative": "Total Negative Reviews",
-  "times_searched": "Times Searched",
+  "total_positive": " Positive Ratings",
+  "total_negative": " Negative Reviews",
+  "total_businesses": "Total businesses",
+  "total_flags":"Total Flags",
   "businesses": "No businesses found",
   "owner_dashboard": "Owner Dashboard",
   "delivery": "Delivery",
@@ -97,8 +98,20 @@
   "or_continue_with":"Or continue with",
   "call":"Call",
   "email":"Email",
-  "share":"Share"
-  
+  "share":"Share",
+  "others":"Others",
+  "fetching_Directions":"Fetching Directions...",
+  "get_directions":"Get Directions",
+  "about":"About",
+  "find_businesses":"Find Businesses",
+  "what_are_you_looking":"What are you looking for?",
+  "recommend":"Recommend Based on My Activity",
+  "enable_location": "Enable Location",
+  "enable_notification": "Enable Notification",
+  "settings": "Settings",
+  "terms_of_service": "Terms of Service",
+  "credits": "Credits",
+  "all_categories":"All Categories"
  
   
 

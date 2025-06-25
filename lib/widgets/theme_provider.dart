@@ -12,7 +12,7 @@ class ThemeProvider extends ChangeNotifier {
 
   void toggleTheme() {
     _isDarkTheme = !_isDarkTheme;
-    _saveTheme(); // ✅ Save to persistent storage
+    _saveTheme();
     notifyListeners();
   }
 

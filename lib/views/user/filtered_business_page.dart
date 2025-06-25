@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geolocator/geolocator.dart';
 import 'user_business_card.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:provider/provider.dart';
+import 'package:localbusiness/widgets/location_provider.dart'; // Adjust the path if needed
 
 class FilteredBusinessPage extends StatelessWidget {
   final String category;
@@ -15,158 +17,85 @@ class FilteredBusinessPage extends StatelessWidget {
     this.isCustomCategory = false,
   });
 
-  Future<Position> _getUserLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      throw Exception('Location services are disabled.');
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        throw Exception('Location permissions are denied.');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      throw Exception('Location permissions are permanently denied.');
-    }
-
-    return await Geolocator.getCurrentPosition();
-  }
-
-  double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  double _calculateDistance(
+      double lat1, double lon1, double lat2, double lon2) {
     return Geolocator.distanceBetween(lat1, lon1, lat2, lon2);
   }
 
-  Future<List<Map<String, dynamic>>> _fetchBusinessesByCategory() async {
-    try {
-      final userLocation = await _getUserLocation();
-      QuerySnapshot snapshot;
+  Future<List<Map<String, dynamic>>> _loadNearbyBusinesses(
+      LocationProvider localProvider) async {
+    final userLocation = await localProvider.getLocation();
+    final querySnapshot =
+        await FirebaseFirestore.instance.collection('businesses').get();
 
-      if (isCustomCategory) {
-        // Fetch all businesses
-        snapshot =
-            await FirebaseFirestore.instance.collection('businesses').get();
+    const maxDistance = 10000.0;
+    const predefinedCategories = [
+      'Restaurant',
+      'Hairdresser',
+      'Bar',
+      'Delivery',
+      'Coffee',
+      'Shopping',
+      'Fitness',
+      'Health',
+      'Beauty',
+      'Entertainment',
+    ];
 
-        // Predefined categories from the form
-        final predefinedCategories = [
-          'Restaurant',
-          'Hairdresser',
-          'Bar',
-          'Delivery',
-          'Coffee',
-          'Shopping',
-          'Fitness',
-          'Health',
-          'Beauty',
-          'Entertainment',
-        ];
-
-        // Filter businesses with custom categories (not in the predefined list)
-        final customBusinesses = snapshot.docs.where((doc) {
+    return querySnapshot.docs
+        .where((doc) {
           final data = doc.data() as Map<String, dynamic>;
-          final category = data['category'] as String?;
-          return category != null && !predefinedCategories.contains(category);
-        }).toList();
+          final businessCategory = data['category'];
+          if (businessCategory == null) return false;
 
-        // Map to the required format
-        final businesses = customBusinesses.map((doc) {
+          return isCustomCategory
+              ? !predefinedCategories.contains(businessCategory)
+              : businessCategory == category;
+        })
+        .map((doc) {
           final data = doc.data() as Map<String, dynamic>;
-          final businessLocation = data['location'] as Map<String, dynamic>;
-          final businessLat = businessLocation['latitude'] as double;
-          final businessLon = businessLocation['longitude'] as double;
+          final location = data['location'] as Map<String, dynamic>?;
+          if (location == null) return null;
 
-          final distance = calculateDistance(
+          final distance = _calculateDistance(
             userLocation.latitude,
             userLocation.longitude,
-            businessLat,
-            businessLon,
+            location['latitude'],
+            location['longitude'],
           );
+
+          if (distance > maxDistance) return null;
 
           return {
             'id': doc.id,
             ...data,
-            'distance': distance, // Add distance to the business data
+            'distance': distance,
           };
-        }).toList();
-
-        // Filter businesses within a certain distance (e.g., 10 km)
-        const maxDistance = 1000000; // 10 km in meters
-        final nearbyBusinesses = businesses.where((business) {
-          return business['distance'] <= maxDistance;
-        }).toList();
-
-        debugPrint(
-            'Fetched ${nearbyBusinesses.length} nearby businesses for custom categories');
-
-        return nearbyBusinesses;
-      } else {
-        // Fetch businesses with the selected category
-        snapshot = await FirebaseFirestore.instance
-            .collection('businesses')
-            .where('category', isEqualTo: category)
-            .get();
-
-        final businesses = snapshot.docs.map((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          final businessLocation = data['location'] as Map<String, dynamic>;
-          final businessLat = businessLocation['latitude'] as double;
-          final businessLon = businessLocation['longitude'] as double;
-
-          final distance = calculateDistance(
-            userLocation.latitude,
-            userLocation.longitude,
-            businessLat,
-            businessLon,
-          );
-
-          return {
-            'id': doc.id,
-            ...data,
-            'distance': distance, // Add distance to the business data
-          };
-        }).toList();
-
-        // Filter businesses within a certain distance (e.g., 10 km)
-        const maxDistance = 1000000; // 10 km in meters
-        final nearbyBusinesses = businesses.where((business) {
-          return business['distance'] <= maxDistance;
-        }).toList();
-
-        debugPrint(
-            'Fetched ${nearbyBusinesses.length} nearby businesses for category: $category');
-
-        return nearbyBusinesses;
-      }
-    } catch (e) {
-      debugPrint('Error fetching businesses: $e');
-      return [];
-    }
+        })
+        .whereType<Map<String, dynamic>>()
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final localization = AppLocalizations.of(context)!;
+    final localProvider = Provider.of<LocationProvider>(context, listen: false);
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(category),
-      ),
+      appBar: AppBar(title: Text(category)),
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _fetchBusinessesByCategory(),
+        future: _loadNearbyBusinesses(localProvider),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-                child: SpinKitWave(
-              color: Color.fromARGB(255, 133, 128, 128),
-              // Or use Theme.of(context).colorScheme.primary
-              size: 50.0,
-            ));
+              child: SpinKitWave(
+                color: Color.fromARGB(255, 133, 128, 128),
+                size: 50.0,
+              ),
+            );
           }
-          if (snapshot.hasError ||
-              snapshot.data == null ||
-              snapshot.data!.isEmpty) {
+
+          if (snapshot.hasError || snapshot.data?.isEmpty == true) {
             return Center(child: Text(localization.no_business));
           }
 
@@ -178,7 +107,7 @@ class FilteredBusinessPage extends StatelessWidget {
               return UserBusinessCard(
                 businessData: business,
                 onRemove: () {},
-                distance: business['distance'], // Add logic if necessary
+                distance: business['distance'],
               );
             },
           );

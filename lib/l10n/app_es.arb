@@ -53,11 +53,12 @@
   "pick_location": "qatuwa dora",
   "analytics": "birsheta",
   "your_analytics": "inte birsheta",
-  "total_rating": "inte kundeta",
-  "total_reviews": "uba qofata",
-  "total_positive": "uba lo'o qofata",
-  "total_negative": "uba ita qofata",
-  "times_searched": "koyeto sate",
+   "total_rating": "አማካይ ደረጃ",
+  "total_reviews": "ጠቅላላ አስተያየቶች",
+  "total_positive": "አዎንታዊ ደረጃዎች",
+  "total_negative": "አሉታዊ አስተያየቶች",
+  "total_businesses": "ጠቅላላ ንግዶች",
+  "total_flags": "ጠቅላላ ማስጠንቀቂያዎች",
   "businesses": "osoy betibena",
   "owner_dashboard": "gadawa qoxaxaretiyosa",
   "delivery": "yediyosa",
@@ -93,6 +94,22 @@
   "or_continue_with":"Or continue with",
   "call":"ይደውሉ",
   "email":"ኢሜይል",
-  "share":"ያጋሩ"
+  "share":"ያጋሩ",
+  "others":"ተጨማሪ",
+  "fetching_Directions":"መገኛዎትን በመፈለግ ላይ...",
+  "get_directions":"Get Directions",
+  "about":"ዝርዝር",
+  "find_businesses":"Find Businesses",
+  "what_are_you_looking":"What are you looking for?",
+  "recommend":"Recommend Based on My Activity",
+  "enable_location":"Enable Location",
+  "enable_notification":"Enable Notification",
+  "settins":"Settings",
+  "terms_of_service":"Terms of Service",
+  "credits":"Credits",
+   "all_categories":"ሁሉም ምርጫዎች"
+
+
+
 
 }

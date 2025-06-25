@@ -175,196 +175,191 @@ class _NearDetailsPageState extends State<NearDetailsPage> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image Carousel
-            if (imageUrls.isNotEmpty)
-              _ImageCarousel(
-                imageUrls: imageUrls,
-                currentIndex: _currentImageIndex,
-                onPageChanged: (index) {
-                  setState(() => _currentImageIndex = index);
-                },
-              )
-            else
-              Container(
-                height: 200,
-                color: Colors.grey[300],
-                child: const Center(
-                  child: Icon(Icons.image_not_supported, size: 100),
+          child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image Carousel
+          if (imageUrls.isNotEmpty)
+            _ImageCarousel(
+              imageUrls: imageUrls,
+              currentIndex: _currentImageIndex,
+              onPageChanged: (index) {
+                setState(() => _currentImageIndex = index);
+              },
+            )
+          else
+            Container(
+              height: 200,
+              color: Colors.grey[300],
+              child: const Center(
+                child: Icon(Icons.image_not_supported, size: 100),
+              ),
+            ),
+
+          // Business Info Card
+          _buildBusinessInfoCard(),
+
+          // Description Section
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  localization.about,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent,
+                  ),
                 ),
-              ),
-
-            // Business Info Card
-            _buildBusinessInfoCard(),
-
-            // Description Section
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'About',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blueAccent,
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 150,
+                  child: SingleChildScrollView(
+                    child: Text(
+                      widget.businessData['description'] ??
+                          'No description available.',
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    height: 150,
-                    child: SingleChildScrollView(
-                      child: Text(
-                        widget.businessData['description'] ??
-                            'No description available.',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
 
-            const Divider(thickness: 1, height: 1),
+          const Divider(thickness: 1, height: 1),
 
-            // Business Details
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Details',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blueAccent,
-                    ),
+          // Business Details
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Details',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent,
                   ),
-                  const SizedBox(height: 10),
-                  _buildDetailCard(
-                    'Category',
-                    widget.businessData['category'] ?? 'No Category',
-                  ),
-                  _buildDetailCard(
-                    'Owner',
-                    widget.businessData['owner_name'] ?? 'No Owner Name',
-                  ),
-                  _buildDetailCard(
-                    'Price Range',
-                    widget.businessData['price_range'] ?? 'N/A',
-                  ),
-                  _buildDetailCard(
-                    'Operating Days',
-                    widget.businessData['operating_days'] ?? 'N/A',
-                  ),
-                  _buildDetailCard(
-                    'Hours',
-                    '${widget.businessData['opening_hours'] ?? 'N/A'} - ${widget.businessData['closing_hours'] ?? 'N/A'}',
-                  ),
-                  _buildDetailCard(
-                    'Phone',
-                    widget.businessData['phone'] ?? 'N/A',
-                  ),
-                  _buildDetailCard(
-                    'Email',
-                    widget.businessData['email'] ?? 'N/A',
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 10),
+                _buildDetailCard(
+                  localization.catagory,
+                  widget.businessData['category'] ?? 'No Category',
+                ),
+                _buildDetailCard(
+                  localization.owners_name,
+                  widget.businessData['owner_name'] ?? 'No Owner Name',
+                ),
+                _buildDetailCard(
+                  localization.prince_range,
+                  widget.businessData['price_range'] ?? 'N/A',
+                ),
+                _buildDetailCard(
+                  localization.operating_days,
+                  widget.businessData['operating_days'] ?? 'N/A',
+                ),
+                _buildDetailCard(
+                  localization.opening_hrs,
+                  '${widget.businessData['opening_hours'] ?? 'N/A'} - ${widget.businessData['closing_hours'] ?? 'N/A'}',
+                ),
+                _buildDetailCard(
+                  localization.phone,
+                  widget.businessData['phone'] ?? 'N/A',
+                ),
+              ],
             ),
+          ),
 
-            const Divider(thickness: 1, height: 1),
+          const Divider(thickness: 1, height: 1),
 
-            // Action Buttons
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Actions',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blueAccent,
+          // Action Buttons
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Actions',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildActionButton(
+                      icon: Icons.call,
+                      label: localization.call,
+                      color: Colors.green,
+                      onPressed: isGuest
+                          ? _showAuthModal
+                          : () => CallAction.launchCaller(
+                              widget.businessData['phone'] ?? ''),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildActionButton(
-                        icon: Icons.call,
-                        label: 'Call',
-                        color: Colors.green,
-                        onPressed: isGuest
-                            ? _showAuthModal
-                            : () => CallAction.launchCaller(
-                                widget.businessData['phone'] ?? ''),
-                      ),
-                      _buildActionButton(
-                        icon: Icons.email,
-                        label: 'Email',
-                        color: Colors.blue,
-                        onPressed: isGuest
-                            ? _showAuthModal
-                            : () => EmailAction.launchEmail(
-                                  toEmail: widget.businessData['email'] ?? '',
-                                  subject:
-                                      'Regarding ${widget.businessData['name']}',
-                                  body: 'Hello, I would like to inquire...',
-                                ),
-                      ),
-                      // In your DetailsPage widget's action button:
-                      _buildActionButton(
-                        icon: Icons.share,
-                        label: 'Share',
-                        color: Colors.blueAccent,
-                        onPressed: isGuest
-                            ? () => _showAuthModal()
-                            : () => ShareService.shareBusiness(
-                                  name: widget.businessData['name'],
-                                  description:
-                                      widget.businessData['description'],
-                                  phone: widget.businessData['phone'],
-                                  category: widget.businessData['category'],
-                                  context: context,
-                                ),
-                      ),
-                      _buildActionButton(
-                        icon: Icons.rate_review,
-                        label: 'Review',
-                        color: Colors.orange,
-                        onPressed: isGuest
-                            ? _showAuthModal
-                            : () => showDialog(
-                                  context: context,
-                                  builder: (context) =>
-                                      ReviewPage(businessId: widget.businessId),
-                                ),
-                      ),
-                      _buildActionButton(
-                        icon: Icons.flag,
-                        label: localization.flag,
-                        color: Colors.red,
-                        onPressed: isGuest ? _showAuthModal : _flagBusiness,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                    _buildActionButton(
+                      icon: Icons.email,
+                      label: localization.email,
+                      color: Colors.blue,
+                      onPressed: isGuest
+                          ? _showAuthModal
+                          : () => EmailAction.launchEmail(
+                                toEmail: widget.businessData['email'] ?? '',
+                                subject:
+                                    'Regarding ${widget.businessData['name']}',
+                                body: 'Hello, I would like to inquire...',
+                              ),
+                    ),
+                    // In your DetailsPage widget's action button:
+                    _buildActionButton(
+                      icon: Icons.share,
+                      label: localization.share,
+                      color: Colors.blueAccent,
+                      onPressed: isGuest
+                          ? () => _showAuthModal()
+                          : () => ShareService.shareBusiness(
+                                name: widget.businessData['name'],
+                                description: widget.businessData['description'],
+                                phone: widget.businessData['phone'],
+                                category: widget.businessData['category'],
+                                context: context,
+                              ),
+                    ),
+                    _buildActionButton(
+                      icon: Icons.rate_review,
+                      label: localization.review,
+                      color: Colors.orange,
+                      onPressed: isGuest
+                          ? _showAuthModal
+                          : () => showDialog(
+                                context: context,
+                                builder: (context) =>
+                                    ReviewPage(businessId: widget.businessId),
+                              ),
+                    ),
+                    _buildActionButton(
+                      icon: Icons.flag,
+                      label: localization.flag,
+                      color: Colors.red,
+                      onPressed: isGuest ? _showAuthModal : _flagBusiness,
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        ],
+      )),
     );
   }
 
   Widget _buildBusinessInfoCard() {
+    final localization = AppLocalizations.of(context)!;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       elevation: 5,
@@ -408,8 +403,8 @@ class _NearDetailsPageState extends State<NearDetailsPage> {
               onPressed: _isLoading ? null : _navigateToMap,
               icon: const Icon(Icons.directions),
               label: _isLoading
-                  ? const Text('Fetching Directions...')
-                  : const Text('Get Directions'),
+                  ? Text(localization.fetching_Directions)
+                  : Text(localization.get_directions),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12.0),
                 textStyle: TextStyle(

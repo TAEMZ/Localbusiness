@@ -237,6 +237,7 @@ class _AuthModalState extends State<AuthModal>
   }
 
   Widget _buildTabBar() {
+    final localization = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
@@ -246,13 +247,9 @@ class _AuthModalState extends State<AuthModal>
         controller: _tabController,
         labelColor: Colors.blue,
         unselectedLabelColor: Colors.grey,
-        indicator: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: Colors.white,
-        ),
-        tabs: const [
-          Tab(text: 'Login'),
-          Tab(text: 'Sign Up'),
+        tabs: [
+          Tab(text: localization.login),
+          Tab(text: localization.sign_up),
         ],
       ),
     );
@@ -272,11 +269,13 @@ class _AuthModalState extends State<AuthModal>
   }
 
   Widget _buildAuthForm({required bool isLogin}) {
+    final localization = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CustomTextField(hintText: 'Email', controller: _emailController),
+          CustomTextField(
+              hintText: localization.email, controller: _emailController),
           const SizedBox(height: 15),
           CustomTextField(
             hintText: "Password",
@@ -323,7 +322,7 @@ class _AuthModalState extends State<AuthModal>
           if (isLogin) _buildForgotPasswordButton(),
           const SizedBox(height: 10),
           _isLoading
-              ? SpinKitWave(
+              ? const SpinKitWave(
                   color: Color.fromARGB(255, 133, 128,
                       128), // Or use Theme.of(context).colorScheme.primary
                   size: 50.0,
@@ -385,7 +384,7 @@ class _AuthModalState extends State<AuthModal>
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
           alignment: Alignment.center,
           child: _isLoading
-              ? SizedBox(
+              ? const SizedBox(
                   width: 20,
                   height: 20,
                   child: SpinKitWave(
@@ -412,7 +411,7 @@ class _AuthModalState extends State<AuthModal>
       children: [
         Text(
           localization.or_continue_with,
-          style: TextStyle(color: Colors.black, fontSize: 14),
+          style: const TextStyle(color: Colors.black, fontSize: 14),
         ),
         const SizedBox(height: 10),
         SizedBox(

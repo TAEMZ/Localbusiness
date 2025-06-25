@@ -116,7 +116,7 @@ class _AnimatedDottedProgressIndicatorState
                   width: 10,
                   height: 10,
                   margin: const EdgeInsets.symmetric(horizontal: 4),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: const Color.fromARGB(255, 237, 97, 58),
                     shape: BoxShape.circle,
                   ),

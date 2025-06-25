@@ -16,7 +16,7 @@ import 'widgets/theme_provider.dart';
 import 'widgets/locale_provider.dart';
 import 'models/firebase_notifications.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-
+import 'package:localbusiness/widgets/location_provider.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'consts.dart'; // ✅ Import Firebase Notifications
 
@@ -35,6 +35,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
       ],
       child: const MyApp(),
     ),
@@ -66,6 +67,7 @@ class MyApp extends StatelessWidget {
         Locale('am'),
         Locale('fr'),
         Locale('es'),
+        Locale('nl'),
       ],
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -125,6 +127,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
   @override
   void initState() {
     super.initState();
+    final locationProvider =
+        Provider.of<LocationProvider>(context, listen: false);
+    locationProvider.getLocation();
     FirebaseNotificationService.subscribeToTopic(
         "business_updates"); // ✅ Auto-subscribe users
   }

@@ -54,9 +54,11 @@ class _WelcomePageState extends State<WelcomePage>
       case 'am':
         return 'አማርኛ';
       case 'fr':
-        return 'ስልጢኛ';
+        return 'ትግርኛ';
       case 'es':
         return 'ወላይትኛ';
+      case 'nl':
+        return 'ኦሮምኛ';
       default:
         return 'English';
     }
@@ -250,11 +252,15 @@ class _WelcomePageState extends State<WelcomePage>
             ),
             const PopupMenuItem<String>(
               value: 'fr',
-              child: Text('ስልጢኛ'),
+              child: Text('ትግርኛ'),
             ),
             const PopupMenuItem<String>(
               value: 'es',
               child: Text('ወላይትኛ'),
+            ),
+            const PopupMenuItem<String>(
+              value: 'nl',
+              child: Text('ኦሮምኛ'),
             ),
           ];
         },

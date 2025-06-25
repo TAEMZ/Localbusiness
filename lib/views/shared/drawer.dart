@@ -77,7 +77,8 @@ class _SharedDrawerState extends State<SharedDrawer> {
       // Optionally show message about manual revocation
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Go to system settings to fully disable notifications'),
+          content: const Text(
+              'Go to system settings to fully disable notifications'),
           action: SnackBarAction(
             label: 'SETTINGS',
             onPressed: () => openAppSettings(),
@@ -236,7 +237,7 @@ class _SharedDrawerState extends State<SharedDrawer> {
             // Enable Location
             _buildSettingTile(
               icon: Icons.location_on,
-              title: 'Enable Location',
+              title: localization.enable_location,
               trailing: Switch(
                 value: isLocationEnabled,
                 onChanged: (value) async {
@@ -251,7 +252,7 @@ class _SharedDrawerState extends State<SharedDrawer> {
 
             _buildSettingTile(
               icon: Icons.notifications,
-              title: 'Enable Notifications',
+              title: localization.enable_notification,
               trailing: Switch(
                 value: isNotificationEnabled,
                 onChanged: (value) async {
@@ -320,7 +321,7 @@ class _SharedDrawerState extends State<SharedDrawer> {
             // Terms of Service
             _buildSettingTile(
               icon: Icons.description,
-              title: 'Terms of Service',
+              title: localization.terms_of_service,
               onTap: () {
                 Navigator.push(
                   context,
@@ -333,7 +334,7 @@ class _SharedDrawerState extends State<SharedDrawer> {
 
             _buildSettingTile(
               icon: Icons.info,
-              title: 'About',
+              title: localization.about,
               onTap: () {
                 Navigator.push(
                   context,
@@ -405,7 +406,7 @@ class _SharedDrawerState extends State<SharedDrawer> {
             // Credits Section
             _buildSettingTile(
               icon: Icons.people,
-              title: 'Credits',
+              title: localization.credits,
               onTap: () {
                 Navigator.push(
                   context,
@@ -558,7 +559,7 @@ class LanguagePicker extends StatelessWidget {
             },
           ),
           ListTile(
-            title: const Text('ስልጢኛ'),
+            title: const Text('ትግርኛ'),
             onTap: () {
               localeProvider.setLocale(const Locale('fr'));
               Navigator.pop(context);
@@ -568,6 +569,13 @@ class LanguagePicker extends StatelessWidget {
             title: const Text('ወላይትኛ'),
             onTap: () {
               localeProvider.setLocale(const Locale('es'));
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            title: const Text('ኦሮምኛ'),
+            onTap: () {
+              localeProvider.setLocale(const Locale('nl'));
               Navigator.pop(context);
             },
           ),

@@ -189,6 +189,7 @@ class _OwnerReviewsPageState extends State<OwnerReviewsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(localization.user_reviews),
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -247,9 +248,9 @@ class _OwnerReviewsPageState extends State<OwnerReviewsPage> {
                     child: Text(category),
                   );
                 }).toList(),
-                const DropdownMenuItem(
+                DropdownMenuItem(
                   value: 'Other',
-                  child: Text('Other'),
+                  child: Text(localization.others),
                 ),
               ],
               onChanged: (value) {

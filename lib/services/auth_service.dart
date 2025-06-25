@@ -123,48 +123,6 @@ class AuthService {
     return null;
   }
 
-  Future<UserModel?> signInWithFacebook() async {
-    try {
-      final LoginResult result = await FacebookAuth.instance.login();
-      if (result.status != LoginStatus.success) return null;
-
-      final Map<String, dynamic> userData =
-          await FacebookAuth.instance.getUserData();
-      final String? accessToken = result.accessToken?.tokenString;
-
-      if (accessToken == null) return null; // User canceled login
-
-      final OAuthCredential credential =
-          FacebookAuthProvider.credential(accessToken);
-
-      UserCredential authResult =
-          await FirebaseAuth.instance.signInWithCredential(credential);
-      User? user = authResult.user;
-
-      if (user != null) {
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        if (!userDoc.exists) {
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .set({
-            'email': user.email,
-            'role': 'user',
-            'created_at': FieldValue.serverTimestamp(),
-          });
-        }
-
-        return UserModel(uid: user.uid, email: user.email!, role: 'user');
-      }
-    } catch (e) {
-      print('Facebook Sign-In Error: $e');
-    }
-    return null;
-  }
-
   // Logout
   Future<void> logout() async {
     try {

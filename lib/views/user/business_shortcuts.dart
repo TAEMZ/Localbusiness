@@ -9,21 +9,49 @@ class BusinessShortcuts extends StatelessWidget {
   Widget build(BuildContext context) {
     final localization = AppLocalizations.of(context)!;
     final List<Map<String, dynamic>> shortcuts = [
-      {'icon': Icons.restaurant, 'label': localization.restaurant},
-      {'icon': Icons.cut, 'label': localization.hairdresser},
-      {'icon': Icons.local_bar, 'label': localization.bar},
-      {'icon': Icons.delivery_dining, 'label': localization.delivery},
-      {'icon': Icons.local_cafe, 'label': localization.coffee},
-      {'icon': Icons.shopping_cart, 'label': localization.shopping},
-      {'icon': Icons.fitness_center, 'label': localization.fitness},
-      {'icon': Icons.health_and_safety, 'label': localization.health},
-      {'icon': Icons.spa, 'label': localization.beauty},
-      {'icon': Icons.theater_comedy, 'label': localization.entertainment},
-      {'icon': Icons.more_horiz, 'label': 'Others'},
+      {
+        'icon': Icons.restaurant,
+        'label': localization.restaurant,
+        'key': 'Restaurant'
+      },
+      {
+        'icon': Icons.cut,
+        'label': localization.hairdresser,
+        'key': 'Hairdresser'
+      },
+      {'icon': Icons.local_bar, 'label': localization.bar, 'key': 'Bar'},
+      {
+        'icon': Icons.delivery_dining,
+        'label': localization.delivery,
+        'key': 'Delivery'
+      },
+      {'icon': Icons.local_cafe, 'label': localization.coffee, 'key': 'Coffee'},
+      {
+        'icon': Icons.shopping_cart,
+        'label': localization.shopping,
+        'key': 'Shopping'
+      },
+      {
+        'icon': Icons.fitness_center,
+        'label': localization.fitness,
+        'key': 'Fitness'
+      },
+      {
+        'icon': Icons.health_and_safety,
+        'label': localization.health,
+        'key': 'Health'
+      },
+      {'icon': Icons.spa, 'label': localization.beauty, 'key': 'Beauty'},
+      {
+        'icon': Icons.theater_comedy,
+        'label': localization.entertainment,
+        'key': 'Entertainment'
+      },
+      {'icon': Icons.more_horiz, 'label': 'others', 'key': 'Other'},
     ];
 
     return SizedBox(
-      height: 90, // Adjust height as needed
+      height: 90,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: shortcuts.map((shortcut) {
@@ -42,8 +70,8 @@ class BusinessShortcuts extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => FilteredBusinessPage(
-                          category: shortcut['label'] as String,
-                          isCustomCategory: shortcut['label'] == 'Others',
+                          category: shortcut['key'] as String,
+                          isCustomCategory: shortcut['key'] == 'Other',
                         ),
                       ),
                     );

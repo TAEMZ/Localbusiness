@@ -3,8 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '/consts.dart'; // API Key Import
-// Import the Search widget
+import '/consts.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class RecommendationPage extends StatefulWidget {
@@ -256,9 +257,10 @@ class _RecommendationPageState extends State<RecommendationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final localization = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Find Businesses"),
+        title: Text(localization.find_businesses),
         backgroundColor: Colors.deepPurple, // AppBar color
       ),
       body: Padding(
@@ -268,7 +270,7 @@ class _RecommendationPageState extends State<RecommendationPage> {
             TextField(
               controller: _queryController,
               decoration: InputDecoration(
-                labelText: "What are you looking for?",
+                labelText: localization.what_are_you_looking,
                 labelStyle: const TextStyle(color: Colors.deepPurple),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.search, color: Colors.deepPurple),
@@ -288,7 +290,7 @@ class _RecommendationPageState extends State<RecommendationPage> {
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: _recommendFromFavorites,
-              child: const Text("Recommend Based on My Activity"),
+              child: Text(localization.recommend),
             ),
             const SizedBox(height: 10),
             if (_isLoading)

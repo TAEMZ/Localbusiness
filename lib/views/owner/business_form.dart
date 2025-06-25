@@ -319,30 +319,107 @@ class _BusinessFormState extends State<BusinessForm> {
   }
 
   void _validateAndSubmit() async {
+    // Validate name
+    if (nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a business name')),
+      );
+      return;
+    }
+
+    // Validate phone (Ethiopian format)
+    final ethiopianPhoneRegex = RegExp(r'^(09|9|2519|2519|7)[0-9]{8}$');
+    final phoneText = phoneController.text.trim();
+    if (phoneText.isEmpty || !ethiopianPhoneRegex.hasMatch(phoneText)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text(
+                'Please enter a valid Ethiopian phone number (e.g. 0912345678)')),
+      );
+      return;
+    }
+
+    // Validate description
+    if (descriptionController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a description')),
+      );
+      return;
+    }
+
+    // Validate city
+    if (cityController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a city')),
+      );
+      return;
+    }
+
+    // Validate owner name
+    if (ownernameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter owner name')),
+      );
+      return;
+    }
+
+    // Validate operating days
+    if (operatingDaysController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter operating days')),
+      );
+      return;
+    }
+
+    // Validate price range
+    if (priceRangeController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter price range')),
+      );
+      return;
+    }
+
+    // Validate opening hours
+    if (openingController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter opening hours')),
+      );
+      return;
+    }
+
+    // Validate closing hours
+    if (closingController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter closing hours')),
+      );
+      return;
+    }
+
+    // Validate images
+    if (_pickedImages.isEmpty && _uploadedImageUrls.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one image')),
+      );
+      return;
+    }
+
     // If the user selected "Other (Write your own)", use the custom category
     if (_showCustomCategoryField && customCategoryController.text.isNotEmpty) {
       selectedCategory = customCategoryController.text.trim();
     }
 
-    // Validate all fields
-    if (nameController.text.trim().isEmpty ||
-        descriptionController.text.trim().isEmpty ||
-        phoneController.text.trim().isEmpty ||
-        cityController.text.trim().isEmpty ||
-        openingController.text.trim().isEmpty ||
-        closingController.text.trim().isEmpty ||
-        ownernameController.text.trim().isEmpty ||
-        priceRangeController.text.trim().isEmpty ||
-        operatingDaysController.text.trim().isEmpty ||
-        selectedCategory == null ||
-        selectedCategory!.isEmpty ||
-        (_pickedImages.isEmpty && _uploadedImageUrls.isEmpty) ||
-        selectedLocation == null) {
+    // Validate category
+    if (selectedCategory == null || selectedCategory!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Please fill in all fields, select at least one image, and pick a location.'),
-        ),
+        const SnackBar(content: Text('Please select a category')),
+      );
+      return;
+    }
+
+    // Validate location
+    if (selectedLocation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please pick a location')),
       );
       return;
     }
@@ -358,8 +435,8 @@ class _BusinessFormState extends State<BusinessForm> {
       'description': descriptionController.text.trim(),
       'phone': phoneController.text.trim(),
       'city': cityController.text.trim(),
-      'category': selectedCategory ?? '', // Use the selected or custom category
-      'images': _uploadedImageUrls, // Store multiple image URLs
+      'category': selectedCategory!,
+      'images': _uploadedImageUrls,
       'opening_hours': openingController.text.trim(),
       'closing_hours': closingController.text.trim(),
       'owner_name': ownernameController.text.trim(),
